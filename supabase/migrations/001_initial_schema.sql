@@ -98,7 +98,7 @@ CREATE TABLE price_changes (
     old_price       NUMERIC(12,2),
     new_price       NUMERIC(12,2),
     change_eur      NUMERIC(12,2),
-    change_pct      NUMERIC(6,2),
+    change_pct      NUMERIC(12,2),
     source          TEXT NOT NULL DEFAULT 'crm_sqlite',
     UNIQUE(property_id, change_date, old_price, new_price)
 );
@@ -773,3 +773,15 @@ CREATE POLICY agent_select ON status_changes FOR SELECT USING (
 -- Same pattern applies to: price_changes, closings, exclusives,
 -- ypodikseis, accountability_reports, billing_transactions, targets_annual
 */
+
+
+-- ────────────────────────────────────────────────────────────
+-- 5. GRANTS
+-- ────────────────────────────────────────────────────────────
+
+-- service_role: full access (used by sync script, bypasses RLS)
+GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role;
+
+-- authenticated: read-only (RLS policies control row visibility)
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO authenticated;

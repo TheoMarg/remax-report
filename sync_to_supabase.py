@@ -30,7 +30,7 @@ load_dotenv(Path(__file__).parent / '.env')
 
 SUPABASE_URL = os.environ['SUPABASE_URL']
 SUPABASE_KEY = os.environ['SUPABASE_SERVICE_KEY']  # service_role key (bypasses RLS)
-SQLITE_PATH  = Path(__file__).parent / 'data' / 'warehouse.sqlite'
+SQLITE_PATH  = Path(__file__).parent.parent / 'data' / 'warehouse.sqlite'
 
 CHUNK_SIZE = 1000
 MAX_VALID_DATE = (datetime.now() + timedelta(days=365)).strftime('%Y-%m-%d')
