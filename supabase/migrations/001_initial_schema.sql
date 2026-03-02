@@ -631,7 +631,7 @@ FROM ypodikseis y WHERE y.property_id IS NOT NULL;
 -- ────────────────────────────────────────────────────────────
 
 -- Helper functions
-CREATE OR REPLACE FUNCTION auth.user_role()
+CREATE OR REPLACE FUNCTION public.user_role()
 RETURNS text LANGUAGE sql STABLE AS $$
     SELECT COALESCE(
         auth.jwt() -> 'user_metadata' ->> 'role',
@@ -639,7 +639,7 @@ RETURNS text LANGUAGE sql STABLE AS $$
     );
 $$;
 
-CREATE OR REPLACE FUNCTION auth.user_agent_id()
+CREATE OR REPLACE FUNCTION public.user_agent_id()
 RETURNS int LANGUAGE sql STABLE AS $$
     SELECT (auth.jwt() -> 'user_metadata' ->> 'agent_id')::int;
 $$;
@@ -662,43 +662,43 @@ ALTER TABLE sync_log                ENABLE ROW LEVEL SECURITY;
 -- ── Active policies: Broker / Admin → see everything ──
 
 CREATE POLICY broker_select ON agents FOR SELECT USING (
-    auth.user_role() IN ('broker', 'admin')
+    public.user_role() IN ('broker', 'admin')
 );
 CREATE POLICY broker_select ON teams FOR SELECT USING (
-    auth.user_role() IN ('broker', 'admin')
+    public.user_role() IN ('broker', 'admin')
 );
 CREATE POLICY broker_select ON team_members FOR SELECT USING (
-    auth.user_role() IN ('broker', 'admin')
+    public.user_role() IN ('broker', 'admin')
 );
 CREATE POLICY broker_select ON properties FOR SELECT USING (
-    auth.user_role() IN ('broker', 'admin')
+    public.user_role() IN ('broker', 'admin')
 );
 CREATE POLICY broker_select ON status_changes FOR SELECT USING (
-    auth.user_role() IN ('broker', 'admin')
+    public.user_role() IN ('broker', 'admin')
 );
 CREATE POLICY broker_select ON price_changes FOR SELECT USING (
-    auth.user_role() IN ('broker', 'admin')
+    public.user_role() IN ('broker', 'admin')
 );
 CREATE POLICY broker_select ON closings FOR SELECT USING (
-    auth.user_role() IN ('broker', 'admin')
+    public.user_role() IN ('broker', 'admin')
 );
 CREATE POLICY broker_select ON exclusives FOR SELECT USING (
-    auth.user_role() IN ('broker', 'admin')
+    public.user_role() IN ('broker', 'admin')
 );
 CREATE POLICY broker_select ON ypodikseis FOR SELECT USING (
-    auth.user_role() IN ('broker', 'admin')
+    public.user_role() IN ('broker', 'admin')
 );
 CREATE POLICY broker_select ON accountability_reports FOR SELECT USING (
-    auth.user_role() IN ('broker', 'admin')
+    public.user_role() IN ('broker', 'admin')
 );
 CREATE POLICY broker_select ON billing_transactions FOR SELECT USING (
-    auth.user_role() IN ('broker', 'admin')
+    public.user_role() IN ('broker', 'admin')
 );
 CREATE POLICY broker_select ON targets_annual FOR SELECT USING (
-    auth.user_role() IN ('broker', 'admin')
+    public.user_role() IN ('broker', 'admin')
 );
 CREATE POLICY broker_select ON sync_log FOR SELECT USING (
-    auth.user_role() IN ('broker', 'admin')
+    public.user_role() IN ('broker', 'admin')
 );
 
 -- ── Service role bypass for sync script ──
@@ -711,43 +711,43 @@ CREATE POLICY broker_select ON sync_log FOR SELECT USING (
 /*
 -- Team Leader: sees own team members
 CREATE POLICY team_leader_select ON agents FOR SELECT USING (
-    auth.user_role() = 'team_leader'
+    public.user_role() = 'team_leader'
     AND agent_id IN (
         SELECT tm.agent_id FROM team_members tm
         WHERE tm.team_id IN (
             SELECT tm2.team_id FROM team_members tm2
-            WHERE tm2.agent_id = auth.user_agent_id()
+            WHERE tm2.agent_id = public.user_agent_id()
         )
     )
 );
 
 -- Agent: sees only self
 CREATE POLICY agent_select ON agents FOR SELECT USING (
-    auth.user_role() = 'agent'
-    AND agent_id = auth.user_agent_id()
+    public.user_role() = 'agent'
+    AND agent_id = public.user_agent_id()
 );
 
 -- Properties: team_leader sees team properties
 CREATE POLICY team_leader_select ON properties FOR SELECT USING (
-    auth.user_role() = 'team_leader'
+    public.user_role() = 'team_leader'
     AND (agent_id IS NULL OR agent_id IN (
         SELECT tm.agent_id FROM team_members tm
         WHERE tm.team_id IN (
             SELECT tm2.team_id FROM team_members tm2
-            WHERE tm2.agent_id = auth.user_agent_id()
+            WHERE tm2.agent_id = public.user_agent_id()
         )
     ))
 );
 
 -- Properties: agent sees own + unassigned
 CREATE POLICY agent_select ON properties FOR SELECT USING (
-    auth.user_role() = 'agent'
-    AND (agent_id IS NULL OR agent_id = auth.user_agent_id())
+    public.user_role() = 'agent'
+    AND (agent_id IS NULL OR agent_id = public.user_agent_id())
 );
 
 -- status_changes: filtered via property → agent
 CREATE POLICY team_leader_select ON status_changes FOR SELECT USING (
-    auth.user_role() = 'team_leader'
+    public.user_role() = 'team_leader'
     AND EXISTS (
         SELECT 1 FROM properties p
         WHERE p.property_id = status_changes.property_id
@@ -755,18 +755,18 @@ CREATE POLICY team_leader_select ON status_changes FOR SELECT USING (
             SELECT tm.agent_id FROM team_members tm
             WHERE tm.team_id IN (
                 SELECT tm2.team_id FROM team_members tm2
-                WHERE tm2.agent_id = auth.user_agent_id()
+                WHERE tm2.agent_id = public.user_agent_id()
             )
         ))
     )
 );
 
 CREATE POLICY agent_select ON status_changes FOR SELECT USING (
-    auth.user_role() = 'agent'
+    public.user_role() = 'agent'
     AND EXISTS (
         SELECT 1 FROM properties p
         WHERE p.property_id = status_changes.property_id
-        AND (p.agent_id IS NULL OR p.agent_id = auth.user_agent_id())
+        AND (p.agent_id IS NULL OR p.agent_id = public.user_agent_id())
     )
 );
 
