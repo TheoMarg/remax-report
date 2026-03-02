@@ -35,7 +35,7 @@ export function Header({
     <header className="bg-[#0C1E3C] text-white px-6 py-3 flex items-center justify-between">
       <div className="flex items-center gap-4">
         <h1 className="text-lg font-bold tracking-tight">RE/MAX Delta Ktima</h1>
-        <span className="text-[#8A94A0] text-sm hidden sm:inline">Broker Report</span>
+        <span className="text-[#8A94A0] text-sm hidden sm:inline">Αναφορά Broker</span>
       </div>
 
       <div className="flex items-center gap-3">
@@ -49,7 +49,7 @@ export function Header({
                 periodType === t ? 'bg-[#1B5299] text-white' : 'text-[#8A94A0] hover:text-white'
               }`}
             >
-              {t === 'month' ? 'Month' : t === 'quarter' ? 'Quarter' : 'Year'}
+              {t === 'month' ? 'Μήνας' : t === 'quarter' ? 'Τρίμηνο' : 'Έτος'}
             </button>
           ))}
         </div>
@@ -98,7 +98,7 @@ export function Header({
             onClick={onSignOut}
             className="text-xs text-[#8A94A0] hover:text-white transition-colors"
           >
-            Sign out
+            Αποσύνδεση
           </button>
         </div>
       </div>

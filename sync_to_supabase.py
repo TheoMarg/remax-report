@@ -42,13 +42,15 @@ SMTP_USER     = os.getenv('SMTP_USER', '')
 SMTP_PASS     = os.getenv('SMTP_PASS', '')
 ALERT_EMAIL   = os.getenv('ALERT_EMAIL', '')
 
+_log_dir = Path(__file__).parent / 'logs'
+_log_dir.mkdir(exist_ok=True)
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s',
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler(Path(__file__).parent / 'logs' / 'sync.log',
-                            encoding='utf-8'),
+        logging.FileHandler(_log_dir / 'sync.log', encoding='utf-8'),
     ]
 )
 logger = logging.getLogger(__name__)
@@ -145,23 +147,9 @@ def batch_upsert(
     return {'total': total, 'success': success, 'errors': errors}
 
 
-def full_replace(
-    supabase: Client,
-    table: str,
-    rows: list[dict],
-) -> dict:
-    """Delete all rows and insert fresh. For small reference tables."""
-    try:
-        # Delete all existing rows
-        supabase.table(table).delete().neq('id', -999999).execute()
-    except Exception:
-        # Some tables don't have 'id' column
-        try:
-            supabase.table(table).delete().gte('agent_id', 0).execute()
-        except Exception:
-            pass
-
-    return batch_upsert(supabase, table, rows, '')
+def delete_all_rows(supabase: Client, table: str, id_column: str = 'id'):
+    """Delete all rows from a table. Uses the specified id column for the filter."""
+    supabase.table(table).delete().gte(id_column, 0).execute()
 
 
 # ────────────────────────────────────────────────────────────
@@ -391,6 +379,14 @@ def sync_closings(sqlite_conn, supabase, canonical_ids):
 
     data = list(grouped.values())
     logger.info(f"  closings: {len(rows)} raw → {len(data)} after dedup")
+
+    # DELETE + INSERT: after dedup each (property_code, closing_date) is unique,
+    # so upsert with the old 3-col constraint won't catch cross-source duplicates.
+    # Full replace is safest for a deduped dataset.
+    try:
+        supabase.table('closings').delete().gte('id', 0).execute()
+    except Exception as e:
+        logger.warning(f"  closings delete failed, proceeding with upsert: {e}")
 
     result = batch_upsert(supabase, 'closings', data,
                           'property_code,closing_date,source')
