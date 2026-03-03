@@ -9,6 +9,7 @@ export interface KpiSummary {
   acc: number;
   delta: number;       // crm - acc
   color: string;
+  byOffice: { office: string; crm: number }[];
 }
 
 export interface TopPerformer {
@@ -50,8 +51,8 @@ export interface MonthTrend {
 
 const KPI_DEFS = [
   { key: 'registrations',  label: 'Καταγραφές',        crmField: 'crm_registrations',  accField: 'acc_registrations',  color: '#1B5299' },
-  { key: 'exclusives',     label: 'Αποκλειστικές',     crmField: 'crm_exclusives',     accField: 'acc_exclusives',     color: '#168F80' },
-  { key: 'published',      label: 'Δημοσιευμένα',      crmField: 'crm_published',      accField: null,                 color: '#1D7A4E' },
+  { key: 'exclusives',     label: 'Νέες Αποκλειστικές', crmField: 'crm_exclusives',     accField: 'acc_exclusives',     color: '#168F80' },
+  { key: 'published',      label: 'Νέα Δημοσιευμένα',  crmField: 'crm_published',      accField: null,                 color: '#1D7A4E' },
   { key: 'showings',       label: 'Υποδείξεις',        crmField: 'crm_showings',       accField: 'acc_showings',       color: '#6B5CA5' },
   { key: 'offers',         label: 'Προσφορές',         crmField: 'crm_offers',         accField: 'acc_offers',         color: '#C9961A' },
   { key: 'closings',       label: 'Κλεισίματα',        crmField: 'crm_closings',       accField: 'acc_closings',       color: '#D4722A' },
@@ -76,9 +77,28 @@ function sumField(rows: CombinedMetric[], field: keyof CombinedMetric): number {
 
 export function computeKpis(metrics: CombinedMetric[]): KpiSummary[] {
   const individuals = individualsOnly(metrics);
+
+  // Group by office
+  const officeMap = new Map<string, CombinedMetric[]>();
+  for (const m of individuals) {
+    const office = m.office || 'Άγνωστο';
+    if (!officeMap.has(office)) officeMap.set(office, []);
+    officeMap.get(office)!.push(m);
+  }
+  const officeNames = Array.from(officeMap.keys()).sort((a, b) => {
+    if (a === 'larissa') return -1;
+    if (b === 'larissa') return 1;
+    return a.localeCompare(b);
+  });
+
   return KPI_DEFS.map(def => {
-    const crm = sumField(individuals, def.crmField as keyof CombinedMetric);
+    const crmKey = def.crmField as keyof CombinedMetric;
+    const crm = sumField(individuals, crmKey);
     const acc = def.accField ? sumField(individuals, def.accField as keyof CombinedMetric) : 0;
+    const byOffice = officeNames.map(office => ({
+      office,
+      crm: sumField(officeMap.get(office)!, crmKey),
+    }));
     return {
       key: def.key,
       label: def.label,
@@ -86,6 +106,7 @@ export function computeKpis(metrics: CombinedMetric[]): KpiSummary[] {
       acc,
       delta: crm - acc,
       color: def.color,
+      byOffice,
     };
   });
 }
@@ -105,25 +126,14 @@ export function computeTopAgent(metrics: CombinedMetric[]): TopPerformer | null 
 }
 
 export function computeTopTeam(metrics: CombinedMetric[]): TopPerformer | null {
-  const individuals = individualsOnly(metrics);
-  // Group by team_id, sum GCI
-  const teamMap = new Map<number, { name: string; gci: number }>();
-  for (const m of individuals) {
-    if (m.team_id && m.team_name) {
-      const existing = teamMap.get(m.team_id);
-      if (existing) {
-        existing.gci += m.gci || 0;
-      } else {
-        teamMap.set(m.team_id, { name: m.team_name, gci: m.gci || 0 });
-      }
-    }
-  }
-  if (teamMap.size === 0) return null;
-  let best: { name: string; gci: number } | null = null;
-  for (const t of teamMap.values()) {
-    if (!best || t.gci > best.gci) best = t;
-  }
-  return best ? { name: best.name, value: best.gci } : null;
+  // Team CRM accounts carry the billing directly (is_team = true)
+  const teams = metrics.filter(m => m.is_team && (m.gci || 0) > 0);
+  if (teams.length === 0) return null;
+  const top = teams.reduce((a, b) => ((b.gci || 0) > (a.gci || 0) ? b : a));
+  return {
+    name: top.canonical_name || `Team #${top.agent_id}`,
+    value: top.gci || 0,
+  };
 }
 
 // ── Office Head-to-Head ──
@@ -163,8 +173,8 @@ export function computeFunnel(metrics: CombinedMetric[]): FunnelStep[] {
   const individuals = individualsOnly(metrics);
   const steps = [
     { label: 'Καταγραφές',        value: sumField(individuals, 'crm_registrations') },
-    { label: 'Αποκλειστικές',     value: sumField(individuals, 'crm_exclusives') },
-    { label: 'Δημοσιευμένα',      value: sumField(individuals, 'crm_published') },
+    { label: 'Νέες Αποκλειστικές', value: sumField(individuals, 'crm_exclusives') },
+    { label: 'Νέα Δημοσιευμένα',  value: sumField(individuals, 'crm_published') },
     { label: 'Υποδείξεις',        value: sumField(individuals, 'crm_showings') },
     { label: 'Προσφορές',         value: sumField(individuals, 'crm_offers') },
     { label: 'Κλεισίματα',        value: sumField(individuals, 'crm_closings') },
@@ -182,8 +192,15 @@ export function computeFunnel(metrics: CombinedMetric[]): FunnelStep[] {
 
 export function aggregateByMonth(metrics: CombinedMetric[]): MonthTrend[] {
   const individuals = individualsOnly(metrics);
-  const monthMap = new Map<string, CombinedMetric[]>();
+  // GCI/Τζίρος includes both individual and team accounts
+  const allByMonth = new Map<string, CombinedMetric[]>();
+  for (const m of metrics) {
+    const ps = m.period_start;
+    if (!allByMonth.has(ps)) allByMonth.set(ps, []);
+    allByMonth.get(ps)!.push(m);
+  }
 
+  const monthMap = new Map<string, CombinedMetric[]>();
   for (const m of individuals) {
     const ps = m.period_start;
     if (!monthMap.has(ps)) monthMap.set(ps, []);
@@ -200,7 +217,7 @@ export function aggregateByMonth(metrics: CombinedMetric[]): MonthTrend[] {
       exclusives: sumField(rows, 'crm_exclusives'),
       closings: sumField(rows, 'crm_closings'),
       billing: sumField(rows, 'crm_billing'),
-      gci: sumField(rows, 'gci'),
+      gci: sumField(allByMonth.get(ps) || [], 'gci'),
     });
   }
 

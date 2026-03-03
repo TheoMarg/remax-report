@@ -48,9 +48,9 @@ function Dashboard() {
       case 'properties':
         return <Placeholder title="Property Cards" cycle={4} />;
       case 'crm-vs-acc':
-        return <Placeholder title="CRM vs Accountability" cycle={5} />;
+        return <Placeholder title="CRM vs Accountability Report" cycle={5} />;
       case 'gci':
-        return <Placeholder title="GCI & Rankings" cycle={5} />;
+        return <Placeholder title="Τζίρος & Κατάταξη" cycle={5} />;
       default:
         return <Overview period={period} />;
     }

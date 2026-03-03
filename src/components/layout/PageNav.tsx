@@ -4,13 +4,13 @@ interface NavItem {
 }
 
 const PAGES: NavItem[] = [
-  { key: 'overview',    label: 'Overview' },
+  { key: 'overview',    label: 'Σύνοψη' },
   { key: 'kpis',        label: 'KPIs' },
   { key: 'withdrawals', label: 'Withdrawals' },
   { key: 'funnel',      label: 'Funnel' },
   { key: 'properties',  label: 'Properties' },
-  { key: 'crm-vs-acc',  label: 'CRM vs ACC' },
-  { key: 'gci',         label: 'GCI' },
+  { key: 'crm-vs-acc',  label: 'CRM vs Accountability' },
+  { key: 'gci',         label: 'Τζίρος' },
 ];
 
 interface Props {

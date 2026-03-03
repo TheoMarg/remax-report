@@ -31,7 +31,7 @@ function CustomTooltip({ active, payload, label }: any) {
         <div key={i} className="flex justify-between gap-4">
           <span style={{ color: p.color }}>{p.name}</span>
           <span className="font-medium text-[#0C1E3C]">
-            {p.name === 'GCI' ? `€${p.value.toLocaleString('el-GR')}` : p.value.toLocaleString('el-GR')}
+            {p.name === 'Τζίρος' ? `€${p.value.toLocaleString('el-GR')}` : p.value.toLocaleString('el-GR')}
           </span>
         </div>
       ))}
@@ -100,7 +100,7 @@ export function TrendChart({ data, isLoading }: Props) {
           <Bar
             yAxisId="left"
             dataKey="exclusives"
-            name="Αποκλειστικές"
+            name="Νέες Αποκλειστικές"
             fill="#168F80"
             radius={[2, 2, 0, 0]}
             barSize={16}
@@ -117,7 +117,7 @@ export function TrendChart({ data, isLoading }: Props) {
             yAxisId="right"
             type="monotone"
             dataKey="gci"
-            name="GCI"
+            name="Τζίρος"
             stroke="#C9961A"
             strokeWidth={2.5}
             dot={{ r: 4, fill: '#C9961A', strokeWidth: 0 }}

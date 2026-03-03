@@ -72,7 +72,7 @@ export function Overview({ period }: Props) {
       <div className="p-6">
         <div className="bg-[#DC3545]/10 border border-[#DC3545]/20 rounded-lg p-4">
           <span className="text-sm text-[#DC3545]">
-            Σφάλμα φόρτωσης: {String(error)}
+            Σφάλμα φόρτωσης: {error instanceof Error ? error.message : JSON.stringify(error)}
           </span>
         </div>
       </div>
@@ -89,7 +89,7 @@ export function Overview({ period }: Props) {
           Σύνοψη — {period.label}
         </h2>
         <span className="text-xs text-[#8A94A0]">
-          {totalAgents} agents
+          {totalAgents} συνεργάτες
         </span>
       </div>
 

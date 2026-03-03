@@ -6,8 +6,7 @@ interface Props {
 }
 
 function formatGci(value: number): string {
-  if (value >= 1000) return `€${(value / 1000).toFixed(1)}K`;
-  return `€${value.toLocaleString('el-GR')}`;
+  return `€${value.toLocaleString('el-GR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
 function PerformerCard({
@@ -33,12 +32,12 @@ function PerformerCard({
         <div>
           <div className="text-lg font-bold text-[#0C1E3C]">{performer.name}</div>
           {performer.office && (
-            <div className="text-xs text-[#8A94A0] mt-0.5">{performer.office}</div>
+            <div className="text-xs text-[#8A94A0] mt-0.5">{performer.office === 'larissa' ? 'Λάρισα' : performer.office === 'katerini' ? 'Κατερίνη' : performer.office}</div>
           )}
           <div className="mt-2 text-2xl font-bold" style={{ color: accent }}>
             {formatGci(performer.value)}
           </div>
-          <div className="text-xs text-[#8A94A0]">GCI περιόδου</div>
+          <div className="text-xs text-[#8A94A0]">Τζίρος περιόδου</div>
         </div>
       ) : (
         <div className="text-sm text-[#8A94A0]">Δεν υπάρχουν δεδομένα</div>
@@ -51,13 +50,13 @@ export function TopPerformers({ topAgent, topTeam }: Props) {
   return (
     <div className="flex gap-4 flex-wrap">
       <PerformerCard
-        title="Top Agent"
+        title="Κορυφαίος Συνεργάτης"
         icon="🏆"
         performer={topAgent}
         accent="#C9961A"
       />
       <PerformerCard
-        title="Top Team"
+        title="Κορυφαία Ομάδα"
         icon="👥"
         performer={topTeam}
         accent="#168F80"

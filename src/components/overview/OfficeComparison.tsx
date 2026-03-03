@@ -36,11 +36,20 @@ function StatRow({ label, values, format = 'number' }: StatRowProps) {
   );
 }
 
+const OFFICE_DISPLAY: Record<string, string> = {
+  larissa: 'Λάρισα',
+  katerini: 'Κατερίνη',
+};
+
+function officeName(raw: string): string {
+  return OFFICE_DISPLAY[raw] || raw;
+}
+
 export function OfficeComparison({ offices }: Props) {
-  // Ensure we have Λάρισα and Κατερίνη in order
+  // Λάρισα first
   const sorted = [...offices].sort((a, b) => {
-    if (a.office.includes('Λάρισα') || a.office.includes('Larissa')) return -1;
-    if (b.office.includes('Λάρισα') || b.office.includes('Larissa')) return 1;
+    if (a.office === 'larissa') return -1;
+    if (b.office === 'larissa') return 1;
     return a.office.localeCompare(b.office);
   });
 
@@ -64,23 +73,23 @@ export function OfficeComparison({ offices }: Props) {
         <div className="w-[120px]" />
         {[o1, o2].map((o, i) => (
           <div key={i} className="flex-1 text-center">
-            <div className="text-sm font-bold text-[#0C1E3C]">{o.office}</div>
-            <div className="text-[10px] text-[#8A94A0]">{o.agents} agents</div>
+            <div className="text-sm font-bold text-[#0C1E3C]">{officeName(o.office)}</div>
+            <div className="text-[10px] text-[#8A94A0]">{o.agents} συνεργάτες</div>
           </div>
         ))}
       </div>
       {/* Stats rows */}
       <StatRow label="Καταγραφές" values={[o1.registrations, o2.registrations]} />
-      <StatRow label="Αποκλειστικές" values={[o1.exclusives, o2.exclusives]} />
-      <StatRow label="Δημοσιευμένα" values={[o1.published, o2.published]} />
+      <StatRow label="Νέες Αποκλ." values={[o1.exclusives, o2.exclusives]} />
+      <StatRow label="Νέα Δημοσ." values={[o1.published, o2.published]} />
       <StatRow label="Υποδείξεις" values={[o1.showings, o2.showings]} />
       <StatRow label="Κλεισίματα" values={[o1.closings, o2.closings]} />
       <StatRow label="Συμβολαιοπ." values={[o1.billing, o2.billing]} />
-      <StatRow label="GCI" values={[o1.gci, o2.gci]} format="currency" />
+      <StatRow label="Τζίρος" values={[o1.gci, o2.gci]} format="currency" />
       {/* Per-agent averages */}
       <div className="mt-3 pt-3 border-t border-[#DDD8D0]">
         <div className="text-[10px] font-semibold uppercase tracking-wider text-[#8A94A0] mb-2">
-          Μ.Ο. ανά Agent
+          Μ.Ο. ανά Συνεργάτη
         </div>
         <StatRow
           label="Καταγραφές"
@@ -97,7 +106,7 @@ export function OfficeComparison({ offices }: Props) {
           ]}
         />
         <StatRow
-          label="GCI"
+          label="Τζίρος"
           values={[
             o1.agents > 0 ? Math.round(o1.gci / o1.agents) : 0,
             o2.agents > 0 ? Math.round(o2.gci / o2.agents) : 0,
