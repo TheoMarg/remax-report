@@ -20,11 +20,6 @@ interface Props {
 export function AgentRankTab({ agents, hasAcc, companyAvg }: Props) {
   return (
     <div className="space-y-3">
-      {/* Company M.O. reference */}
-      <div className="text-xs text-[#8A94A0]">
-        Μ.Ο. εταιρείας: <span className="font-semibold text-[#0C1E3C]">{companyAvg.toLocaleString('el-GR')}</span>
-      </div>
-
       {/* Agent list */}
       <div className="space-y-1">
         {agents.map((agent, i) => {
@@ -52,10 +47,18 @@ export function AgentRankTab({ agents, hasAcc, companyAvg }: Props) {
               {/* CRM */}
               <div className="text-right">
                 <div className="text-sm font-bold text-[#0C1E3C]">{agent.crm.toLocaleString('el-GR')}</div>
-                <div className="text-[10px] text-[#8A94A0]">CRM</div>
+                {agent.sale != null && agent.rent != null ? (
+                  <div className="text-[10px] text-[#8A94A0]">
+                    <span className="text-[#1B5299]">Πωλήσεις {agent.sale}</span>
+                    {' / '}
+                    <span className="text-[#D4722A]">Ενοικιάσεις {agent.rent}</span>
+                  </div>
+                ) : (
+                  <div className="text-[10px] text-[#8A94A0]">CRM</div>
+                )}
               </div>
 
-              {/* ACC + delta */}
+              {/* Accountability Report + delta */}
               {hasAcc && (
                 <div className="text-right w-20">
                   <div className="text-sm text-[#8A94A0]">{agent.acc.toLocaleString('el-GR')}</div>
@@ -75,6 +78,10 @@ export function AgentRankTab({ agents, hasAcc, companyAvg }: Props) {
             </div>
           );
         })}
+      </div>
+
+      <div className="text-xs text-[#8A94A0] border-t border-[#DDD8D0] pt-2">
+        {agents.length} συνεργάτες · Μέσος όρος ανά συνεργάτη/μήνα (Εταιρεία): <span className="font-semibold text-[#0C1E3C]">{companyAvg.toLocaleString('el-GR')}</span>
       </div>
     </div>
   );

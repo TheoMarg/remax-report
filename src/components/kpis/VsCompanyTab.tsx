@@ -10,11 +10,6 @@ export function VsCompanyTab({ agents, companyAvg }: Props) {
 
   return (
     <div className="space-y-3">
-      {/* Company M.O. reference */}
-      <div className="text-xs text-[#8A94A0]">
-        Μ.Ο. εταιρείας: <span className="font-semibold text-[#0C1E3C]">{companyAvg.toLocaleString('el-GR')}</span>
-      </div>
-
       <div className="space-y-2">
         {agents.map((agent) => {
           const pct = maxCrm > 0 ? (agent.crm / maxCrm) * 100 : 0;
@@ -44,6 +39,10 @@ export function VsCompanyTab({ agents, companyAvg }: Props) {
             </div>
           );
         })}
+      </div>
+
+      <div className="text-xs text-[#8A94A0] border-t border-[#DDD8D0] pt-2">
+        {agents.length} συνεργάτες · Μέσος όρος ανά συνεργάτη/μήνα (Εταιρεία): <span className="font-semibold text-[#0C1E3C]">{companyAvg.toLocaleString('el-GR')}</span>
       </div>
     </div>
   );

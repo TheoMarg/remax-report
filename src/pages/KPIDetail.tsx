@@ -2,13 +2,9 @@ import { useState, useMemo } from 'react';
 import type { Period } from '../lib/types';
 import { useMetrics } from '../hooks/useMetrics';
 import { useTeams, useTeamMembers } from '../hooks/useAgents';
-import {
-  KPI_DEFS,
-  computeFourClub,
-} from '../lib/metrics';
+import { KPI_DEFS } from '../lib/metrics';
 import { KpiSelector } from '../components/kpis/KpiSelector';
 import { MetricSection } from '../components/kpis/MetricSection';
-import { FourClubSection } from '../components/kpis/FourClubSection';
 
 interface Props {
   period: Period;
@@ -23,11 +19,6 @@ export function KPIDetail({ period }: Props) {
   const activeDef = useMemo(
     () => KPI_DEFS.find(d => d.key === activeKpi) || KPI_DEFS[0],
     [activeKpi],
-  );
-
-  const fourClub = useMemo(
-    () => (metrics ? computeFourClub(metrics) : []),
-    [metrics],
   );
 
   // Loading
@@ -73,10 +64,8 @@ export function KPIDetail({ period }: Props) {
         metrics={metrics}
         teams={teams ?? []}
         teamMembers={teamMembers ?? []}
+        period={period}
       />
-
-      {/* 4 Club — only for exclusives */}
-      {activeKpi === 'exclusives' && <FourClubSection agents={fourClub} />}
     </div>
   );
 }

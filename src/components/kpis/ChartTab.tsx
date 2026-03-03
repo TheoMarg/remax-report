@@ -20,7 +20,7 @@ export function ChartTab({ agents, hasAcc, companyAvg }: Props) {
   const chartData = agents.map((a) => ({
     name: a.name.length > 12 ? a.name.substring(0, 12) + '…' : a.name,
     CRM: a.crm,
-    ACC: a.acc,
+    'Accountability Report': a.acc,
   }));
 
   return (
@@ -44,13 +44,13 @@ export function ChartTab({ agents, hasAcc, companyAvg }: Props) {
           />
           <Legend wrapperStyle={{ fontSize: 12 }} />
           <Bar dataKey="CRM" fill="#1B5299" radius={[3, 3, 0, 0]} />
-          {hasAcc && <Bar dataKey="ACC" fill="#C9961A" radius={[3, 3, 0, 0]} />}
+          {hasAcc && <Bar dataKey="Accountability Report" fill="#C9961A" radius={[3, 3, 0, 0]} />}
           <ReferenceLine
             y={companyAvg}
             stroke="#0C1E3C"
             strokeDasharray="6 3"
             label={{
-              value: `M.O. ${companyAvg.toLocaleString('el-GR')}`,
+              value: `avg ${companyAvg.toLocaleString('el-GR')}`,
               position: 'right',
               fontSize: 11,
               fill: '#0C1E3C',

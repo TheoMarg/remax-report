@@ -34,10 +34,18 @@ export interface CombinedMetric {
   team_name: string | null;
   // CRM
   crm_registrations: number;
+  crm_registrations_sale: number;
+  crm_registrations_rent: number;
   crm_exclusives: number;
   crm_exclusives_residential: number;
+  crm_exclusives_sale: number;
+  crm_exclusives_rent: number;
   crm_published: number;
+  crm_published_sale: number;
+  crm_published_rent: number;
   crm_showings: number;
+  crm_showings_sale: number;
+  crm_showings_rent: number;
   crm_withdrawals: number;
   crm_offers: number;
   crm_closings: number;

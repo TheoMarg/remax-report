@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import type { CombinedMetric, Team, TeamMember } from '../../lib/types';
+import type { CombinedMetric, Team, TeamMember, Period } from '../../lib/types';
 import type { KpiDef } from '../../lib/metrics';
 import {
   rankAgentsByKpi,
@@ -16,8 +16,9 @@ import { OfficeVsOfficeTab } from './OfficeVsOfficeTab';
 import { PeersTab } from './PeersTab';
 import { VsCompanyTab } from './VsCompanyTab';
 import { ChartTab } from './ChartTab';
+import { FourClubSection } from './FourClubSection';
 
-const TAB_LABELS = [
+const BASE_TABS = [
   'Ανά Agent',
   'Ανά Team',
   'Γραφείο vs Γραφείο',
@@ -27,16 +28,21 @@ const TAB_LABELS = [
   'Chart',
 ];
 
+const FOUR_CLUB_TAB = '4+ Οικιστικές Αποκλειστικές';
+
 interface Props {
   def: KpiDef;
   metrics: CombinedMetric[];
   teams: Team[];
   teamMembers: TeamMember[];
+  period: Period;
 }
 
-export function MetricSection({ def, metrics, teams, teamMembers }: Props) {
+export function MetricSection({ def, metrics, teams, teamMembers, period }: Props) {
   const [activeTab, setActiveTab] = useState(0);
   const hasAcc = def.accField !== null;
+  const isExclusives = def.key === 'exclusives';
+  const tabLabels = isExclusives ? [...BASE_TABS, FOUR_CLUB_TAB] : BASE_TABS;
 
   const individuals = useMemo(() => individualsOnly(metrics), [metrics]);
 
@@ -99,6 +105,8 @@ export function MetricSection({ def, metrics, teams, teamMembers }: Props) {
         return <VsCompanyTab agents={allAgents} companyAvg={companyAvg} />;
       case 6:
         return <ChartTab agents={allAgents} hasAcc={hasAcc} companyAvg={companyAvg} />;
+      case 7:
+        return isExclusives ? <FourClubSection period={period} metrics={metrics} /> : null;
       default:
         return null;
     }
@@ -113,24 +121,33 @@ export function MetricSection({ def, metrics, teams, teamMembers }: Props) {
         acc={acc}
         delta={crm - acc}
         officeBreakdown={officeBreakdown}
+        totalAgents={allAgents.length}
+        companyAvg={companyAvg}
       />
 
       {/* Tab bar */}
       <div className="bg-white rounded-lg border border-[#DDD8D0] p-4">
         <div className="flex flex-wrap gap-1 mb-4">
-          {TAB_LABELS.map((label, i) => (
-            <button
-              key={label}
-              onClick={() => setActiveTab(i)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                activeTab === i
-                  ? 'bg-[#0C1E3C] text-white'
-                  : 'text-[#8A94A0] hover:bg-[#F7F6F3] hover:text-[#0C1E3C]'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+          {tabLabels.map((label, i) => {
+            const isFourClub = label === FOUR_CLUB_TAB;
+            return (
+              <button
+                key={label}
+                onClick={() => setActiveTab(i)}
+                className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
+                  isFourClub ? 'font-bold' : 'font-medium'
+                } ${
+                  activeTab === i
+                    ? 'bg-[#0C1E3C] text-white'
+                    : isFourClub
+                    ? 'text-[#0C1E3C] bg-[#E2EFDA] hover:bg-[#C6EFCE]'
+                    : 'text-[#8A94A0] hover:bg-[#F7F6F3] hover:text-[#0C1E3C]'
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Active tab content */}

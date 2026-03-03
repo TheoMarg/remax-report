@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import type { CombinedMetric, Period } from '../lib/types';
+import { ALLOWED_AGENT_IDS } from '../lib/constants';
 
 /**
  * Fetches v_combined_metrics for the 6 months ending at the selected period.
@@ -25,7 +26,8 @@ export function useTrend(period: Period) {
         .from('v_combined_metrics')
         .select('*')
         .gte('period_start', startDate)
-        .lte('period_start', endDate);
+        .lte('period_start', endDate)
+        .in('agent_id', ALLOWED_AGENT_IDS);
 
       if (error) throw error;
       return data ?? [];

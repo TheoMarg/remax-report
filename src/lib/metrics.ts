@@ -1,4 +1,5 @@
 import type { CombinedMetric, Team, TeamMember } from './types';
+import { TEAM_VIRTUAL_AGENTS } from './constants';
 
 // ── Types ──
 
@@ -18,6 +19,8 @@ export interface KpiSummary {
   delta: number;       // crm - acc
   color: string;
   byOffice: { office: string; crm: number }[];
+  sale?: number;       // Πώληση count (for exclusives)
+  rent?: number;       // Ενοικίαση count (for exclusives)
 }
 
 export interface AgentKpiRow {
@@ -27,6 +30,8 @@ export interface AgentKpiRow {
   crm: number;
   acc: number;
   delta: number;
+  sale?: number;       // Πώληση (for exclusives)
+  rent?: number;       // Ενοικίαση (for exclusives)
 }
 
 export interface TeamKpiBreakdown {
@@ -119,7 +124,11 @@ export function sumField(rows: CombinedMetric[], field: keyof CombinedMetric): n
 export function computeKpis(metrics: CombinedMetric[]): KpiSummary[] {
   const individuals = individualsOnly(metrics);
 
-  // Group by office
+  // CRM totals use ALL agents (individuals + team accounts)
+  // because team members' CRM data lives under team virtual agents (33, 34, 35, 103)
+  // ACC totals use individuals only (team accounts have 0 acc per rules)
+
+  // Group individuals by office for per-office breakdown
   const officeMap = new Map<string, CombinedMetric[]>();
   for (const m of individuals) {
     const office = m.office || 'Άγνωστο';
@@ -134,13 +143,13 @@ export function computeKpis(metrics: CombinedMetric[]): KpiSummary[] {
 
   return KPI_DEFS.map(def => {
     const crmKey = def.crmField as keyof CombinedMetric;
-    const crm = sumField(individuals, crmKey);
+    const crm = sumField(metrics, crmKey);  // ALL agents for company total
     const acc = def.accField ? sumField(individuals, def.accField as keyof CombinedMetric) : 0;
     const byOffice = officeNames.map(office => ({
       office,
       crm: sumField(officeMap.get(office)!, crmKey),
     }));
-    return {
+    const result: KpiSummary = {
       key: def.key,
       label: def.label,
       crm,
@@ -149,6 +158,21 @@ export function computeKpis(metrics: CombinedMetric[]): KpiSummary[] {
       color: def.color,
       byOffice,
     };
+    // Add Πώληση/Ενοικίαση breakdown
+    if (def.key === 'registrations') {
+      result.sale = sumField(metrics, 'crm_registrations_sale');
+      result.rent = sumField(metrics, 'crm_registrations_rent');
+    } else if (def.key === 'exclusives') {
+      result.sale = sumField(metrics, 'crm_exclusives_sale');
+      result.rent = sumField(metrics, 'crm_exclusives_rent');
+    } else if (def.key === 'published') {
+      result.sale = sumField(metrics, 'crm_published_sale');
+      result.rent = sumField(metrics, 'crm_published_rent');
+    } else if (def.key === 'showings') {
+      result.sale = sumField(metrics, 'crm_showings_sale');
+      result.rent = sumField(metrics, 'crm_showings_rent');
+    }
+    return result;
   });
 }
 
@@ -212,15 +236,15 @@ export function computeOfficeComparison(metrics: CombinedMetric[]): OfficeSummar
 const FUNNEL_COLORS = ['#1B5299', '#168F80', '#1D7A4E', '#6B5CA5', '#C9961A', '#D4722A', '#0C1E3C'];
 
 export function computeFunnel(metrics: CombinedMetric[]): FunnelStep[] {
-  const individuals = individualsOnly(metrics);
+  // Use ALL agents (individuals + teams) for company-level funnel
   const steps = [
-    { label: 'Καταγραφές',        value: sumField(individuals, 'crm_registrations') },
-    { label: 'Νέες Αποκλειστικές', value: sumField(individuals, 'crm_exclusives') },
-    { label: 'Νέα Δημοσιευμένα',  value: sumField(individuals, 'crm_published') },
-    { label: 'Υποδείξεις',        value: sumField(individuals, 'crm_showings') },
-    { label: 'Προσφορές',         value: sumField(individuals, 'crm_offers') },
-    { label: 'Κλεισίματα',        value: sumField(individuals, 'crm_closings') },
-    { label: 'Συμβολαιοποιήσεις', value: sumField(individuals, 'crm_billing') },
+    { label: 'Καταγραφές',        value: sumField(metrics, 'crm_registrations') },
+    { label: 'Νέες Αποκλειστικές', value: sumField(metrics, 'crm_exclusives') },
+    { label: 'Νέα Δημοσιευμένα',  value: sumField(metrics, 'crm_published') },
+    { label: 'Υποδείξεις',        value: sumField(metrics, 'crm_showings') },
+    { label: 'Προσφορές',         value: sumField(metrics, 'crm_offers') },
+    { label: 'Κλεισίματα',        value: sumField(metrics, 'crm_closings') },
+    { label: 'Συμβολαιοποιήσεις', value: sumField(metrics, 'crm_billing') },
   ];
 
   return steps.map((s, i) => ({
@@ -281,38 +305,67 @@ export function rankAgentsByKpi(
   const crmKey = crmField as keyof CombinedMetric;
   const accKey = accField as keyof CombinedMetric | null;
 
+  const saleRentMap: Record<string, { sale: string; rent: string }> = {
+    crm_exclusives:    { sale: 'crm_exclusives_sale',    rent: 'crm_exclusives_rent' },
+    crm_registrations: { sale: 'crm_registrations_sale', rent: 'crm_registrations_rent' },
+    crm_published:     { sale: 'crm_published_sale',     rent: 'crm_published_rent' },
+    crm_showings:      { sale: 'crm_showings_sale',      rent: 'crm_showings_rent' },
+  };
+  const sr = saleRentMap[crmField];
+  const hasSaleRent = !!sr;
+  const saleField = sr?.sale ?? null;
+  const rentField = sr?.rent ?? null;
+
   // Aggregate per agent_id (multi-month)
-  const agentMap = new Map<number, { name: string; office: string | null; crm: number; acc: number }>();
+  const agentMap = new Map<number, { name: string; office: string | null; crm: number; acc: number; sale: number; rent: number }>();
   for (const m of individuals) {
     const existing = agentMap.get(m.agent_id);
     const crmVal = Number(m[crmKey]) || 0;
     const accVal = accKey ? (Number(m[accKey]) || 0) : 0;
+    const saleVal = saleField ? (Number(m[saleField as keyof CombinedMetric]) || 0) : 0;
+    const rentVal = rentField ? (Number(m[rentField as keyof CombinedMetric]) || 0) : 0;
     if (existing) {
       existing.crm += crmVal;
       existing.acc += accVal;
+      existing.sale += saleVal;
+      existing.rent += rentVal;
     } else {
       agentMap.set(m.agent_id, {
         name: m.canonical_name || `Agent #${m.agent_id}`,
         office: m.office,
         crm: crmVal,
         acc: accVal,
+        sale: saleVal,
+        rent: rentVal,
       });
     }
   }
 
   return Array.from(agentMap.entries())
-    .map(([agent_id, v]) => ({
-      agent_id,
-      name: v.name,
-      office: v.office,
-      crm: v.crm,
-      acc: v.acc,
-      delta: v.crm - v.acc,
-    }))
+    .map(([agent_id, v]) => {
+      const row: AgentKpiRow = {
+        agent_id,
+        name: v.name,
+        office: v.office,
+        crm: v.crm,
+        acc: v.acc,
+        delta: v.crm - v.acc,
+      };
+      if (hasSaleRent) {
+        row.sale = v.sale;
+        row.rent = v.rent;
+      }
+      return row;
+    })
     .sort((a, b) => b.crm - a.crm);
 }
 
-/** Team breakdown: totals per team + member lists */
+/** Team breakdown: totals per team + member lists.
+ *  CRM totals come from team virtual CRM accounts (is_team=true),
+ *  ACC totals = sum of TL + members (virtual agents have 0 acc).
+ *  Per BROKER_REPORT_RULES: "Στο CRM, τα listings των team members
+ *  εμφανίζονται κάτω από τον team agent_id (33, 34, 35, 103)"
+ */
 export function computeTeamBreakdown(
   metrics: CombinedMetric[],
   teams: Team[],
@@ -323,6 +376,16 @@ export function computeTeamBreakdown(
   const agentRows = rankAgentsByKpi(metrics, crmField, accField);
   const agentMap = new Map(agentRows.map(a => [a.agent_id, a]));
   const totalCrm = agentRows.reduce((s, a) => s + a.crm, 0);
+
+  // Build team CRM totals from virtual agent accounts (is_team=true)
+  const crmKey = crmField as keyof CombinedMetric;
+  const teamAccountCrm = new Map<number, number>(); // agent_id → CRM sum
+  for (const m of metrics) {
+    if (m.is_team) {
+      const val = Number(m[crmKey]) || 0;
+      teamAccountCrm.set(m.agent_id, (teamAccountCrm.get(m.agent_id) || 0) + val);
+    }
+  }
 
   // Build team_id → agent_ids
   const teamAgentIds = new Map<number, number[]>();
@@ -336,8 +399,16 @@ export function computeTeamBreakdown(
   const result: TeamKpiBreakdown[] = teams.map(t => {
     const memberIds = teamAgentIds.get(t.team_id) || [];
     const members = memberIds.map(id => agentMap.get(id)).filter(Boolean) as AgentKpiRow[];
-    const crm = members.reduce((s, m) => s + m.crm, 0);
+
+    // CRM: prefer team virtual agent accounts; fallback to sum of members
+    const virtualIds = TEAM_VIRTUAL_AGENTS[t.team_id] || [];
+    const crmFromVirtual = virtualIds.reduce((s, id) => s + (teamAccountCrm.get(id) || 0), 0);
+    const crmFromMembers = members.reduce((s, m) => s + m.crm, 0);
+    const crm = crmFromVirtual > 0 ? crmFromVirtual : crmFromMembers;
+
+    // ACC: sum of members
     const acc = members.reduce((s, m) => s + m.acc, 0);
+
     return {
       team_id: t.team_id,
       team_name: t.team_name,
@@ -348,14 +419,14 @@ export function computeTeamBreakdown(
     };
   });
 
-  // "Χωρίς Team" bucket
+  // "Χωρίς Team" bucket — individual agents not in any team
   const unassigned = agentRows.filter(a => !assignedAgents.has(a.agent_id));
   if (unassigned.length > 0) {
     const crm = unassigned.reduce((s, m) => s + m.crm, 0);
     const acc = unassigned.reduce((s, m) => s + m.acc, 0);
     result.push({
       team_id: null,
-      team_name: 'Χωρίς Team',
+      team_name: 'Ανεξάρτητοι Συνεργάτες',
       crm,
       acc,
       pctOfCompany: totalCrm > 0 ? Math.round((crm / totalCrm) * 100) : 0,

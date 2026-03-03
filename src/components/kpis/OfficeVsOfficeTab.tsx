@@ -29,7 +29,7 @@ export function OfficeVsOfficeTab({ offices, hasAcc }: Props) {
               </div>
               {hasAcc && (
                 <div>
-                  <div className="text-xs text-[#8A94A0]">ACC Σύνολο</div>
+                  <div className="text-xs text-[#8A94A0]">Accountability Report</div>
                   <div className="text-xl font-bold text-[#0C1E3C]">{o.acc.toLocaleString('el-GR')}</div>
                 </div>
               )}
@@ -37,7 +37,7 @@ export function OfficeVsOfficeTab({ offices, hasAcc }: Props) {
 
             <div className="flex items-center gap-4 text-xs text-[#8A94A0]">
               <span>{o.agents} agents</span>
-              <span>M.O./agent: <span className="font-semibold text-[#0C1E3C]">{o.moPerAgent.toLocaleString('el-GR')}</span></span>
+              <span>Μέσος όρος ανά συνεργάτη/μήνα: <span className="font-semibold text-[#0C1E3C]">{o.moPerAgent.toLocaleString('el-GR')}</span></span>
             </div>
           </div>
         );

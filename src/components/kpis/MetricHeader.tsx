@@ -11,9 +11,11 @@ interface Props {
   acc: number;
   delta: number;
   officeBreakdown: OfficeKpiComparison[];
+  totalAgents: number;
+  companyAvg: number;
 }
 
-export function MetricHeader({ def, crm, acc, delta, officeBreakdown }: Props) {
+export function MetricHeader({ def, crm, acc, delta, officeBreakdown, totalAgents, companyAvg }: Props) {
   const hasAcc = def.accField !== null;
 
   return (
@@ -27,10 +29,10 @@ export function MetricHeader({ def, crm, acc, delta, officeBreakdown }: Props) {
           <div className="text-3xl font-bold text-[#0C1E3C]">{crm.toLocaleString('el-GR')}</div>
         </div>
 
-        {/* ACC total + delta */}
+        {/* Accountability Report total + delta */}
         {hasAcc && (
           <div>
-            <div className="text-xs font-medium text-[#8A94A0] mb-1">Accountability</div>
+            <div className="text-xs font-medium text-[#8A94A0] mb-1">Accountability Report</div>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-bold text-[#0C1E3C]">{acc.toLocaleString('el-GR')}</span>
               {delta !== 0 && (
@@ -48,6 +50,17 @@ export function MetricHeader({ def, crm, acc, delta, officeBreakdown }: Props) {
           </div>
         )}
 
+        {/* Company avg */}
+        <div>
+          <div className="text-xs text-[#8A94A0] mb-1">Εταιρεία</div>
+          <div className="text-xs text-[#8A94A0]">
+            {totalAgents} συνεργάτες
+          </div>
+          <div className="text-xs text-[#8A94A0]">
+            Μέσος όρος ανά συνεργάτη/μήνα: <span className="font-semibold text-[#0C1E3C]">{companyAvg.toLocaleString('el-GR')}</span>
+          </div>
+        </div>
+
         {/* Per-office */}
         <div className="flex gap-6">
           {officeBreakdown.map((o) => (
@@ -55,7 +68,7 @@ export function MetricHeader({ def, crm, acc, delta, officeBreakdown }: Props) {
               <div className="text-xs text-[#8A94A0] mb-1">{OFFICE_SHORT[o.office] || o.office}</div>
               <div className="text-lg font-bold text-[#0C1E3C]">{o.crm.toLocaleString('el-GR')}</div>
               <div className="text-xs text-[#8A94A0]">
-                {o.agents} agents · M.O. {o.moPerAgent.toLocaleString('el-GR')}
+                {o.agents} agents · avg/συνεργάτη/μήνα {o.moPerAgent.toLocaleString('el-GR')}
               </div>
             </div>
           ))}

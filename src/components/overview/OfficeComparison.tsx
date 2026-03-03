@@ -89,7 +89,7 @@ export function OfficeComparison({ offices }: Props) {
       {/* Per-agent averages */}
       <div className="mt-3 pt-3 border-t border-[#DDD8D0]">
         <div className="text-[10px] font-semibold uppercase tracking-wider text-[#8A94A0] mb-2">
-          Μ.Ο. ανά Συνεργάτη
+          Μέσος όρος ανά συνεργάτη/μήνα
         </div>
         <StatRow
           label="Καταγραφές"

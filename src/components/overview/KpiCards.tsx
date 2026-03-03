@@ -49,6 +49,13 @@ export function KpiCards({ kpis }: Props) {
             </div>
             <div className="text-2xl font-bold text-[#0C1E3C]">
               {kpi.crm.toLocaleString('el-GR')}
+              {kpi.sale != null && kpi.rent != null && (
+                <span className="text-xs font-normal text-[#8A94A0] ml-2">
+                  <span className="text-[#1B5299]">Πωλήσεις {kpi.sale}</span>
+                  {' / '}
+                  <span className="text-[#D4722A]">Ενοικιάσεις {kpi.rent}</span>
+                </span>
+              )}
             </div>
             {/* Per-office breakdown */}
             <div className="flex items-center gap-2 text-xs text-[#8A94A0] mb-1">
@@ -61,7 +68,7 @@ export function KpiCards({ kpis }: Props) {
             {hasAcc && (
               <div className="flex items-center gap-2">
                 <span className="text-sm text-[#8A94A0]">
-                  Accountability: {kpi.acc.toLocaleString('el-GR')}
+                  Accountability Report: {kpi.acc.toLocaleString('el-GR')}
                 </span>
                 <DeltaBadge delta={kpi.delta} hasAcc={hasAcc} />
               </div>
