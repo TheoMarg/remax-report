@@ -30,8 +30,13 @@ export function Overview({ period }: Props) {
     [metrics]
   );
 
-  const topAgent = useMemo(
-    () => (metrics ? computeTopAgent(metrics) : null),
+  const topAgentLarissa = useMemo(
+    () => (metrics ? computeTopAgent(metrics, 'larissa') : null),
+    [metrics]
+  );
+
+  const topAgentKaterini = useMemo(
+    () => (metrics ? computeTopAgent(metrics, 'katerini') : null),
     [metrics]
   );
 
@@ -94,7 +99,7 @@ export function Overview({ period }: Props) {
       </div>
 
       {/* Section 1: Top Performers */}
-      <TopPerformers topAgent={topAgent} topTeam={topTeam} />
+      <TopPerformers topAgentLarissa={topAgentLarissa} topAgentKaterini={topAgentKaterini} topTeam={topTeam} />
 
       {/* Section 2: KPI Cards */}
       <KpiCards kpis={kpis} />

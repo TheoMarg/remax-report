@@ -7,6 +7,7 @@ import { Header } from './components/layout/Header';
 import { PageNav } from './components/layout/PageNav';
 import { Footer } from './components/layout/Footer';
 import { Overview } from './pages/Overview';
+import { KPIDetail } from './pages/KPIDetail';
 import { Placeholder } from './pages/Placeholder';
 
 const queryClient = new QueryClient({
@@ -40,7 +41,7 @@ function Dashboard() {
       case 'overview':
         return <Overview period={period} />;
       case 'kpis':
-        return <Placeholder title="KPIs Detailed" cycle={2} />;
+        return <KPIDetail period={period} />;
       case 'withdrawals':
         return <Placeholder title="Withdrawals" cycle={3} />;
       case 'funnel':
