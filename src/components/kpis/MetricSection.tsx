@@ -92,9 +92,9 @@ export function MetricSection({ def, metrics, teams, teamMembers, period }: Prop
   const renderTab = () => {
     switch (activeTab) {
       case 0:
-        return <AgentRankTab agents={allAgents} hasAcc={hasAcc} companyAvg={companyAvg} />;
+        return <AgentRankTab agents={allAgents} hasAcc={hasAcc} companyAvg={companyAvg} kpiColor={def.color} />;
       case 1:
-        return <TeamBreakdownTab teams={teamBreakdown} hasAcc={hasAcc} />;
+        return <TeamBreakdownTab teams={teamBreakdown} hasAcc={hasAcc} kpiColor={def.color} />;
       case 2:
         return <OfficeVsOfficeTab offices={officeBreakdown} hasAcc={hasAcc} />;
       case 3:

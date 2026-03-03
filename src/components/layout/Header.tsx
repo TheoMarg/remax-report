@@ -32,7 +32,7 @@ export function Header({
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
   return (
-    <header className="bg-[#0C1E3C] text-white px-6 py-3 flex items-center justify-between">
+    <header className="bg-[#0C1E3C] text-white px-6 py-3 flex flex-wrap items-center justify-between gap-2">
       <div className="flex items-center gap-4">
         <h1 className="text-lg font-bold tracking-tight">RE/MAX Delta Ktima</h1>
         <span className="text-[#8A94A0] text-sm hidden sm:inline">Αναφορά Broker</span>

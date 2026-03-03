@@ -23,12 +23,12 @@ export function Footer() {
     : null;
 
   return (
-    <footer className="bg-white border-t border-[#DDD8D0] px-6 py-2 text-xs text-[#8A94A0] flex justify-between">
+    <footer className="bg-white border-t border-[#DDD8D0] px-6 py-2 text-xs text-[#6B7280] flex justify-between">
       <span>
-        Last sync: {syncDate ?? 'N/A'}
+        Τελευταίος συγχρονισμός: {syncDate ?? 'Μη διαθέσιμο'}
       </span>
       <span>
-        RE/MAX Delta Ktima &middot; Confidential
+        RE/MAX Delta Ktima &middot; Εμπιστευτικό
       </span>
     </footer>
   );

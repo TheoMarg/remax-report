@@ -9,7 +9,7 @@ export function SalesFunnel({ steps }: Props) {
 
   return (
     <div className="bg-white rounded-lg border border-[#DDD8D0] p-5">
-      <h3 className="text-sm font-semibold text-[#0C1E3C] mb-4">Sales Funnel</h3>
+      <h3 className="text-sm font-semibold text-[#0C1E3C] mb-4">Funnel Πωλήσεων</h3>
       <div className="space-y-2.5">
         {steps.map((step, i) => {
           const widthPct = Math.max((step.value / maxValue) * 100, 8);
@@ -54,7 +54,7 @@ export function SalesFunnel({ steps }: Props) {
         })}
       </div>
       <div className="mt-3 text-[10px] text-[#8A94A0]">
-        Ποσοστά: conversion rate από προηγούμενο στάδιο
+        Ποσοστά: μετατροπή από προηγούμενο στάδιο. Τιμές &gt;100% σημαίνουν ότι μετρώνται και ακίνητα προηγούμενων περιόδων.
       </div>
     </div>
   );

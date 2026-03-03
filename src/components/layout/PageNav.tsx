@@ -6,9 +6,9 @@ interface NavItem {
 const PAGES: NavItem[] = [
   { key: 'overview',    label: 'Σύνοψη' },
   { key: 'kpis',        label: 'KPIs' },
-  { key: 'withdrawals', label: 'Withdrawals' },
+  { key: 'withdrawals', label: 'Αποσύρσεις' },
   { key: 'funnel',      label: 'Funnel' },
-  { key: 'properties',  label: 'Properties' },
+  { key: 'properties',  label: 'Ακίνητα' },
   { key: 'crm-vs-acc',  label: 'CRM vs Accountability' },
   { key: 'gci',         label: 'Τζίρος' },
 ];

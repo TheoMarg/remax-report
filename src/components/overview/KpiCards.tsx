@@ -51,9 +51,9 @@ export function KpiCards({ kpis }: Props) {
               {kpi.crm.toLocaleString('el-GR')}
               {kpi.sale != null && kpi.rent != null && (
                 <span className="text-xs font-normal text-[#8A94A0] ml-2">
-                  <span className="text-[#1B5299]">Πωλήσεις {kpi.sale}</span>
+                  <span className="text-[#1B5299]">Πώληση {kpi.sale}</span>
                   {' / '}
-                  <span className="text-[#D4722A]">Ενοικιάσεις {kpi.rent}</span>
+                  <span className="text-[#D4722A]">Ενοικίαση {kpi.rent}</span>
                 </span>
               )}
             </div>
