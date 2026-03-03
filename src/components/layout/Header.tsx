@@ -49,7 +49,7 @@ export function Header({
                 periodType === t ? 'bg-[#1B5299] text-white' : 'text-[#8A94A0] hover:text-white'
               }`}
             >
-              {t === 'month' ? 'Μήνας' : t === 'quarter' ? 'Τρίμηνο' : 'Έτος'}
+              {t === 'month' ? 'Μήνας' : t === 'quarter' ? 'Τρίμηνο' : 'Ετος'}
             </button>
           ))}
         </div>

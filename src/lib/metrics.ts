@@ -1,4 +1,4 @@
-import type { CombinedMetric, Team, TeamMember } from './types';
+import type { CombinedMetric, Team, TeamMember, WithdrawalReason, FunnelRow } from './types';
 import { TEAM_VIRTUAL_AGENTS } from './constants';
 
 // ── Types ──
@@ -131,7 +131,7 @@ export function computeKpis(metrics: CombinedMetric[]): KpiSummary[] {
   // Group individuals by office for per-office breakdown
   const officeMap = new Map<string, CombinedMetric[]>();
   for (const m of individuals) {
-    const office = m.office || 'Άγνωστο';
+    const office = m.office || 'Αγνωστο';
     if (!officeMap.has(office)) officeMap.set(office, []);
     officeMap.get(office)!.push(m);
   }
@@ -209,7 +209,7 @@ export function computeOfficeComparison(metrics: CombinedMetric[]): OfficeSummar
   const officeMap = new Map<string, { rows: CombinedMetric[]; agents: Set<number> }>();
 
   for (const m of individuals) {
-    const office = m.office || 'Άγνωστο';
+    const office = m.office || 'Αγνωστο';
     if (!officeMap.has(office)) {
       officeMap.set(office, { rows: [], agents: new Set() });
     }
@@ -449,7 +449,7 @@ export function computeOfficeKpiComparison(
 
   const officeMap = new Map<string, { agents: Set<number>; crm: number; acc: number }>();
   for (const m of individuals) {
-    const office = m.office || 'Άγνωστο';
+    const office = m.office || 'Αγνωστο';
     if (!officeMap.has(office)) officeMap.set(office, { agents: new Set(), crm: 0, acc: 0 });
     const entry = officeMap.get(office)!;
     entry.agents.add(m.agent_id);
@@ -511,4 +511,177 @@ export function computeFourClub(metrics: CombinedMetric[]): FourClubAgent[] {
   return Array.from(agentMap.entries())
     .map(([agent_id, v]) => ({ agent_id, name: v.name, office: v.office, count: v.count }))
     .sort((a, b) => b.count - a.count);
+}
+
+// ══════════════════════════════════════════════════════════
+// ── Withdrawal Reasons (Cycle 3)
+// ══════════════════════════════════════════════════════════
+
+export interface WithdrawalCategorySummary {
+  key: string;
+  label: string;
+  color: string;
+  reasons: { reason: string; cnt: number }[];
+  total: number;
+}
+
+export interface WithdrawalTeamRow {
+  team_id: number | null;
+  team_name: string;
+  passive: number;
+  active: number;
+  closings: number;
+  total: number;
+}
+
+export interface FunnelByTypeRow {
+  subcategory: string;
+  registrations: number;
+  exclusives: number;
+  published: number;
+  showings: number;
+  closings: number;
+  convPct: number | null;
+}
+
+export const WITHDRAWAL_CATEGORIES: {
+  key: string;
+  label: string;
+  color: string;
+  reasons: string[];
+}[] = [
+  {
+    key: 'passive',
+    label: 'Παθητικές',
+    color: '#8A94A0',
+    reasons: ['Ανενεργό', 'Σε εκκρεμότητα', 'Προς έλεγχο - Χαρτιά'],
+  },
+  {
+    key: 'active',
+    label: 'Ενεργές',
+    color: '#DC3545',
+    reasons: [
+      'Άρση εντολής',
+      'Προβληματικός πωλητής',
+      'Μεγάλη τιμή',
+      'Πρόβλημα αρτιότητας',
+      'Έκλεισε από άλλο μεσίτη',
+      'Έκλεισε από τον πελάτη',
+    ],
+  },
+  {
+    key: 'closings',
+    label: 'Κλεισίματα',
+    color: '#1D7A4E',
+    reasons: ['Έκλεισε από εμάς', 'Συμβόλαιο σε εξέλιξη'],
+  },
+];
+
+export const ALL_WITHDRAWAL_REASONS: string[] = WITHDRAWAL_CATEGORIES.flatMap(c => c.reasons);
+
+/** Aggregate withdrawal reasons into 3 category summaries */
+export function computeWithdrawalSummary(
+  rows: WithdrawalReason[],
+): WithdrawalCategorySummary[] {
+  // Sum by reason across all rows
+  const reasonTotals = new Map<string, number>();
+  for (const r of rows) {
+    reasonTotals.set(r.reason, (reasonTotals.get(r.reason) || 0) + r.cnt);
+  }
+
+  return WITHDRAWAL_CATEGORIES.map(cat => {
+    const reasons = cat.reasons
+      .map(reason => ({ reason, cnt: reasonTotals.get(reason) || 0 }))
+      .sort((a, b) => b.cnt - a.cnt);
+    return {
+      key: cat.key,
+      label: cat.label,
+      color: cat.color,
+      reasons,
+      total: reasons.reduce((s, r) => s + r.cnt, 0),
+    };
+  });
+}
+
+/** Aggregate withdrawals by team, split into passive/active/closings */
+export function computeWithdrawalsByTeam(
+  rows: WithdrawalReason[],
+  teams: Team[],
+  teamMembers: TeamMember[],
+): WithdrawalTeamRow[] {
+  // Build reason → category lookup
+  const reasonCat = new Map<string, string>();
+  for (const cat of WITHDRAWAL_CATEGORIES) {
+    for (const r of cat.reasons) reasonCat.set(r, cat.key);
+  }
+
+  // Build agent_id → team_id lookup
+  const agentTeam = new Map<number, number>();
+  for (const tm of teamMembers) {
+    agentTeam.set(tm.agent_id, tm.team_id);
+  }
+
+  // Aggregate per team (null = unassigned)
+  const teamMap = new Map<number | null, { passive: number; active: number; closings: number }>();
+  for (const r of rows) {
+    const tid = agentTeam.get(r.agent_id) ?? null;
+    if (!teamMap.has(tid)) teamMap.set(tid, { passive: 0, active: 0, closings: 0 });
+    const entry = teamMap.get(tid)!;
+    const cat = reasonCat.get(r.reason);
+    if (cat === 'passive') entry.passive += r.cnt;
+    else if (cat === 'active') entry.active += r.cnt;
+    else if (cat === 'closings') entry.closings += r.cnt;
+  }
+
+  // Build team_id → name lookup
+  const teamName = new Map<number, string>(teams.map(t => [t.team_id, t.team_name]));
+
+  return Array.from(teamMap.entries())
+    .map(([tid, v]) => ({
+      team_id: tid,
+      team_name: tid !== null ? (teamName.get(tid) || `Team #${tid}`) : 'Ανεξάρτητοι',
+      passive: v.passive,
+      active: v.active,
+      closings: v.closings,
+      total: v.passive + v.active + v.closings,
+    }))
+    .sort((a, b) => b.total - a.total);
+}
+
+// ══════════════════════════════════════════════════════════
+// ── Funnel by Type (Cycle 3)
+// ══════════════════════════════════════════════════════════
+
+/** Aggregate FunnelRow[] into per-subcategory summaries with conv% */
+export function computeFunnelByType(rows: FunnelRow[]): FunnelByTypeRow[] {
+  const subMap = new Map<string, Omit<FunnelByTypeRow, 'convPct'>>();
+
+  for (const r of rows) {
+    const existing = subMap.get(r.subcategory);
+    if (existing) {
+      existing.registrations += r.registrations;
+      existing.exclusives += r.exclusives;
+      existing.published += r.published;
+      existing.showings += r.showings;
+      existing.closings += r.closings;
+    } else {
+      subMap.set(r.subcategory, {
+        subcategory: r.subcategory,
+        registrations: r.registrations,
+        exclusives: r.exclusives,
+        published: r.published,
+        showings: r.showings,
+        closings: r.closings,
+      });
+    }
+  }
+
+  return Array.from(subMap.values())
+    .map(r => ({
+      ...r,
+      convPct: r.registrations > 0
+        ? Math.round((r.closings / r.registrations) * 1000) / 10
+        : null,
+    }))
+    .sort((a, b) => b.registrations - a.registrations);
 }

@@ -8,6 +8,8 @@ import { PageNav } from './components/layout/PageNav';
 import { Footer } from './components/layout/Footer';
 import { Overview } from './pages/Overview';
 import { KPIDetail } from './pages/KPIDetail';
+import { Withdrawals } from './pages/Withdrawals';
+import { Funnel } from './pages/Funnel';
 import { Placeholder } from './pages/Placeholder';
 
 const queryClient = new QueryClient({
@@ -43,9 +45,9 @@ function Dashboard() {
       case 'kpis':
         return <KPIDetail period={period} />;
       case 'withdrawals':
-        return <Placeholder title="Withdrawals" cycle={3} />;
+        return <Withdrawals period={period} />;
       case 'funnel':
-        return <Placeholder title="Funnel by Type" cycle={3} />;
+        return <Funnel period={period} />;
       case 'properties':
         return <Placeholder title="Property Cards" cycle={4} />;
       case 'crm-vs-acc':
