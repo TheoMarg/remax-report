@@ -59,6 +59,7 @@ export interface FourClubAgent {
 }
 
 export interface TopPerformer {
+  agent_id: number;
   name: string;
   value: number;
   office?: string | null;
@@ -211,6 +212,7 @@ export function computeTopAgent(metrics: CombinedMetric[], office?: string): Top
   const sorted = [...individuals].sort((a, b) => (b.gci || 0) - (a.gci || 0));
   const top = sorted[0];
   return {
+    agent_id: top.agent_id,
     name: top.canonical_name || `Agent #${top.agent_id}`,
     value: top.gci || 0,
     office: top.office,
@@ -223,6 +225,7 @@ export function computeTopTeam(metrics: CombinedMetric[]): TopPerformer | null {
   if (teams.length === 0) return null;
   const top = teams.reduce((a, b) => ((b.gci || 0) > (a.gci || 0) ? b : a));
   return {
+    agent_id: top.agent_id,
     name: top.canonical_name || `Team #${top.agent_id}`,
     value: top.gci || 0,
   };

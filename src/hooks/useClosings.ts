@@ -18,7 +18,7 @@ export function useClosings(period: Period) {
 
       // Query 1: Closings with joined property details
       const { data: closings, error: closingsErr } = await supabase
-        .from('closings')
+        .from('v_valid_closings')
         .select(`
           id, agent_id, property_id, property_code, closing_date,
           closing_type, price, gci, source,

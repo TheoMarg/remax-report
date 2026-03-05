@@ -1,4 +1,5 @@
 import type { TeamKpiBreakdown } from '../../lib/metrics';
+import { AgentLink } from '../ui/AgentLink';
 
 interface Props {
   teams: TeamKpiBreakdown[];
@@ -60,7 +61,7 @@ export function TeamBreakdownTab({ teams, hasAcc, kpiColor }: Props) {
                   return (
                     <div key={m.agent_id} className="flex items-center gap-3 py-2 border-b border-border-subtle last:border-b-0 hover:bg-surface transition-colors">
                       <div className="flex-1 min-w-0">
-                        <span className="text-xs font-medium text-text-primary truncate block">{m.name}</span>
+                        <AgentLink agentId={m.agent_id} name={m.name} className="text-xs font-medium text-text-primary truncate block" />
                       </div>
                       <div className="w-[140px]">
                         <div className="h-3.5 bg-border-subtle rounded-full overflow-hidden">

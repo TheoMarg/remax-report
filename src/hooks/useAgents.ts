@@ -8,7 +8,7 @@ export function useAgents() {
     queryFn: async (): Promise<Agent[]> => {
       const { data, error } = await supabase
         .from('agents')
-        .select('agent_id, canonical_name, first_name, last_name, office, is_active, is_team')
+        .select('agent_id, canonical_name, first_name, last_name, office, is_active, is_team, phone, email, start_date')
         .order('canonical_name');
 
       if (error) throw error;

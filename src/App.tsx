@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuth } from './hooks/useAuth';
 import { usePeriod } from './hooks/usePeriod';
+import { Modal360Provider } from './contexts/Modal360Context';
 import { LoginForm } from './components/LoginForm';
 import { Header } from './components/layout/Header';
 import { PageNav } from './components/layout/PageNav';
@@ -13,6 +14,7 @@ import { Funnel } from './pages/Funnel';
 import { Properties } from './pages/Properties';
 import { CrmVsAcc } from './pages/CrmVsAcc';
 import { GciRankings } from './pages/GciRankings';
+import { SearchPalette } from './components/search/SearchPalette';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -86,7 +88,10 @@ function Dashboard() {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Dashboard />
+      <Modal360Provider>
+        <Dashboard />
+        <SearchPalette />
+      </Modal360Provider>
     </QueryClientProvider>
   );
 }

@@ -2,12 +2,15 @@ import type { PropertyCardData } from '../../lib/types';
 import { formatDateEL } from '../../lib/propertyMetrics';
 import { PropertyTimeline } from './PropertyTimeline';
 import { PropertyShowings } from './PropertyShowings';
+import { AgentLink } from '../ui/AgentLink';
+import { PropertyLink } from '../ui/PropertyLink';
 
 interface Props {
   card: PropertyCardData;
+  siblingPropertyIds?: string[];
 }
 
-export function PropertyCard({ card }: Props) {
+export function PropertyCard({ card, siblingPropertyIds }: Props) {
   const { closing, agentName, events, showings, stages, totalDaysToClose, listToCloseRatio } = card;
   const prop = closing.properties;
 
@@ -18,7 +21,11 @@ export function PropertyCard({ card }: Props) {
         <div className="space-y-0.5">
           <div className="flex items-center gap-2 flex-wrap">
             <h4 className="text-sm font-bold text-text-primary">
-              {closing.property_code || closing.property_id || '—'}
+              {closing.property_id ? (
+                <PropertyLink propertyId={closing.property_id} code={closing.property_code || closing.property_id} className="text-sm font-bold" siblingIds={siblingPropertyIds} />
+              ) : (
+                closing.property_code || '—'
+              )}
             </h4>
             {prop.subcategory && (
               <span className="text-[10px] bg-surface border border-border-default rounded-lg px-1.5 py-0.5 text-text-secondary">
@@ -59,7 +66,11 @@ export function PropertyCard({ card }: Props) {
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-text-secondary">
         <span>
           <span className="text-text-muted">Σύμβουλος:</span>{' '}
-          <span className="font-medium">{agentName}</span>
+          {card.agentId ? (
+            <AgentLink agentId={card.agentId} name={agentName} className="font-medium" />
+          ) : (
+            <span className="font-medium">{agentName}</span>
+          )}
         </span>
         <span>
           <span className="text-text-muted">Κλείσιμο:</span>{' '}

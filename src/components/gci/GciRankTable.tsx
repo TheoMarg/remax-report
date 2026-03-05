@@ -1,4 +1,5 @@
 import type { GciRanking } from '../../lib/metrics';
+import { AgentLink } from '../ui/AgentLink';
 
 const OFFICE_SHORT: Record<string, string> = {
   larissa: 'Λάρισα',
@@ -61,7 +62,7 @@ export function GciRankTable({ rankings, companyAvg }: Props) {
                   #{agent.rank}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold text-text-primary truncate">{agent.name}</div>
+                  <AgentLink agentId={agent.agent_id} name={agent.name} className="text-sm font-semibold text-text-primary truncate block" />
                   <div className="text-[11px] text-text-muted">
                     {OFFICE_SHORT[agent.office || ''] || agent.office || '—'}
                   </div>

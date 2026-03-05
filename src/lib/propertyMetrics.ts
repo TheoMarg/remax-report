@@ -18,20 +18,26 @@ export const EVENT_TYPE_CONFIG: Record<string, { label: string; color: string }>
   offer:       { label: 'Προσφορά',        color: '#C9961A' },
   deposit:     { label: 'Προκαταβολή',     color: '#D4722A' },
   closing:     { label: 'Κλείσιμο',        color: '#0C1E3C' },
+  deactivation:{ label: 'Απενεργοποίηση', color: '#8A94A0' },
   withdrawal:  { label: 'Απόσυρση',        color: '#DC3545' },
   price_change:{ label: 'Αλλαγή τιμής',   color: '#8A94A0' },
-  registration:{ label: 'Καταγραφή',       color: '#3A4550' },
+  exclusive_end: { label: 'Λήξη αποκλ.',      color: '#DC3545' },
+  registration:  { label: 'Καταγραφή',       color: '#3A4550' },
+  notarization:  { label: 'Συμβολαιοποίηση', color: '#2C1810' },
 };
 
 // ── Canonical Stage Pairs ──
 
 export const STAGE_PAIRS: { from: string; to: string; label: string }[] = [
-  { from: 'activation',  to: 'exclusive',  label: 'Ενεργ. → Αποκλ.' },
-  { from: 'activation',  to: 'published',  label: 'Ενεργ. → Δημοσ.' },
-  { from: 'published',   to: 'showing',    label: 'Δημοσ. → Υπόδ.' },
-  { from: 'showing',     to: 'deposit',    label: 'Υπόδ. → Προκατ.' },
-  { from: 'deposit',     to: 'closing',    label: 'Προκατ. → Κλείσ.' },
-  { from: 'activation',  to: 'closing',    label: 'Ενεργ. → Κλείσ.' },
+  { from: 'registration', to: 'exclusive',     label: 'Καταγρ. → Αποκλ.' },
+  { from: 'exclusive',    to: 'published',     label: 'Αποκλ. → Δημοσ.' },
+  { from: 'published',    to: 'showing',       label: 'Δημοσ. → Υπόδ.' },
+  { from: 'published',    to: 'price_change',  label: 'Δημοσ. → Αλλ.Τιμής' },
+  { from: 'price_change', to: 'showing',       label: 'Αλλ.Τιμής → Υπόδ.' },
+  { from: 'published',    to: 'closing',       label: 'Δημοσ. → Κλείσ.' },
+  { from: 'showing',      to: 'deposit',       label: 'Υπόδ. → Προσφ.' },
+  { from: 'closing',      to: 'notarization',  label: 'Κλείσ. → Συμβ.' },
+  { from: 'registration', to: 'notarization',  label: 'Καταγρ. → Συμβ.' },
 ];
 
 // ── Helpers ──
@@ -138,6 +144,7 @@ export function assemblePropertyCards(
     return {
       closing,
       agentName: closing.agent_id ? (agentMap.get(closing.agent_id) ?? `Agent #${closing.agent_id}`) : '—',
+      agentId: closing.agent_id ?? null,
       events: propEvents.sort((a, b) => a.event_date.localeCompare(b.event_date)),
       showings: propShowings,
       stages,

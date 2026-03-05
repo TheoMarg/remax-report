@@ -329,30 +329,57 @@ def sync_price_changes(sqlite_conn, supabase):
 
 
 def sync_closings(sqlite_conn, supabase, canonical_ids):
-    """Sync closings with dedup: same property_code + closing_month → keep gsheet priority."""
-    logger.info("Syncing closings (with dedup)...")
+    """Sync closings with dedup and validation.
+
+    Dedup: same property_code + closing_month → keep gsheet priority.
+    Validation: exclude closings for properties that later had 'Άρση εντολής'.
+    """
+    logger.info("Syncing closings (with dedup + validation)...")
     rows = sqlite_conn.execute("SELECT * FROM closings").fetchall()
 
-    # Priority: gsheet_closings > crm_status_change
-    SOURCE_PRIORITY = {'gsheet_closings': 0, 'crm_status_change': 1}
+    # ── Validation: only "Έκλεισε από εμάς" (closing_ours) is a real closing ──
+    # If a property's most recent status event (deactivation or closing_ours)
+    # is NOT closing_ours, all closings for that property are invalid.
+    invalidated_rows = sqlite_conn.execute("""
+        WITH last_status AS (
+            SELECT property_id, event_type,
+                   ROW_NUMBER() OVER (PARTITION BY property_id ORDER BY change_date DESC, id DESC) as rn
+            FROM status_changes
+            WHERE event_type IN ('deactivation', 'closing_ours')
+        )
+        SELECT property_id FROM last_status
+        WHERE rn = 1 AND event_type != 'closing_ours'
+    """).fetchall()
+    invalidated_props: set[str] = {r['property_id'] for r in invalidated_rows}
+    logger.info(f"  {len(invalidated_props)} properties invalidated (last status is not closing_ours)")
 
-    # Group by (property_code, closing_month) for dedup
-    grouped: dict[tuple, dict] = {}
+    # Only sync CRM closings (source = 'crm_status_change').
+    # Gsheet closings are unreliable (batch import dates, no CRM confirmation).
+    data = []
+    invalidated = 0
+    skipped_gsheet = 0
     for r in rows:
+        # Skip non-CRM closings
+        if r['source'] != 'crm_status_change':
+            skipped_gsheet += 1
+            continue
+
         dt = normalize_date(r['closing_date'])
         code = r['property_code'] or ''
         if not code and not r['property_id']:
-            continue  # Skip rows with neither code nor property_id
+            continue
 
-        # closing_month for dedup
-        month_key = dt[:7] if dt else 'unknown'
-        dedup_key = (code, month_key)
+        # Validation: skip closings for properties whose last status is not closing_ours
+        prop_id = r['property_id']
+        if prop_id and prop_id in invalidated_props:
+            invalidated += 1
+            continue
 
         agent_id = r['agent_id']
         if agent_id is not None and agent_id not in canonical_ids:
             agent_id = None
 
-        rec = {
+        data.append({
             'agent_id':       agent_id,
             'property_id':    r['property_id'],
             'property_code':  code,
@@ -362,24 +389,10 @@ def sync_closings(sqlite_conn, supabase, canonical_ids):
             'gci':            r['gci'],
             'source':         r['source'],
             'source_detail':  r['source_detail'],
-        }
+        })
 
-        existing = grouped.get(dedup_key)
-        if existing is None:
-            grouped[dedup_key] = rec
-        else:
-            # Keep higher priority source
-            old_prio = SOURCE_PRIORITY.get(existing['source'], 99)
-            new_prio = SOURCE_PRIORITY.get(rec['source'], 99)
-            if new_prio < old_prio:
-                grouped[dedup_key] = rec
-            elif new_prio == old_prio:
-                # Same source: keep the one with more data (gci not null)
-                if rec['gci'] and not existing['gci']:
-                    grouped[dedup_key] = rec
-
-    data = list(grouped.values())
-    logger.info(f"  closings: {len(rows)} raw → {len(data)} after dedup")
+    logger.info(f"  closings: {len(rows)} raw, {skipped_gsheet} gsheet skipped, "
+                f"{invalidated} invalidated -> {len(data)} CRM closings")
 
     # DELETE + INSERT: after dedup each (property_code, closing_date) is unique,
     # so upsert with the old 3-col constraint won't catch cross-source duplicates.

@@ -79,9 +79,12 @@ export function Properties({ period }: Props) {
           </div>
         ) : (
           <div className="space-y-4">
-            {cards.map(card => (
-              <PropertyCard key={card.closing.id} card={card} />
-            ))}
+            {(() => {
+              const siblingIds = cards.map(c => c.closing.property_id).filter(Boolean) as string[];
+              return cards.map(card => (
+                <PropertyCard key={card.closing.id} card={card} siblingPropertyIds={siblingIds} />
+              ));
+            })()}
           </div>
         )}
       </AnimatedSection>

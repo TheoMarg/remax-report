@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { AgentKpiRow } from '../../lib/metrics';
 import { KPI_DEFS, rankAgentsByKpi } from '../../lib/metrics';
 import type { CombinedMetric } from '../../lib/types';
+import { AgentLink } from '../ui/AgentLink';
 
 const OFFICE_SHORT: Record<string, string> = {
   larissa: 'Λάρισα',
@@ -48,7 +49,7 @@ export function DeviationTable({ metrics }: Props) {
           <div key={agent.agent_id} className="flex items-center gap-3 px-3 py-2.5 border-b border-border-subtle transition-colors hover:bg-surface">
             <span className="w-7 text-right text-xs font-bold text-text-muted">#{i + 1}</span>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-text-primary truncate">{agent.name}</div>
+              <AgentLink agentId={agent.agent_id} name={agent.name} className="text-sm font-semibold text-text-primary truncate block" />
               <div className="text-[11px] text-text-muted">
                 {OFFICE_SHORT[agent.office || ''] || agent.office || '—'}
               </div>

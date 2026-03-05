@@ -8,6 +8,9 @@ export interface Agent {
   office: string | null;
   is_active: boolean;
   is_team: boolean;
+  phone: string | null;
+  email: string | null;
+  start_date: string | null;
 }
 
 export interface Team {
@@ -192,11 +195,55 @@ export interface StageSummaryRow {
 export interface PropertyCardData {
   closing: ClosingWithProperty;
   agentName: string;
+  agentId: number | null;
   events: PropertyEvent[];
   showings: Showing[];
   stages: StageDuration[];
   totalDaysToClose: number | null;
   listToCloseRatio: number | null;
+}
+
+// ── 360 Modal Types ──
+
+export interface PropertyDetail {
+  property_id: string;
+  property_code: string | null;
+  address: string | null;
+  area: string | null;
+  category: string | null;
+  subcategory: string | null;
+  price: number | null;
+  size_sqm: number | null;
+  bedrooms: number | null;
+  floor: string | null;
+  year_built: number | null;
+  energy_class: string | null;
+  is_exclusive: boolean | null;
+  is_retired: boolean | null;
+  retirement_reason: string | null;
+  first_pub_date: string | null;
+  registration_date: string | null;
+  agent_id: number | null;
+  transaction_type: string | null;
+  days_on_market: number | null;
+}
+
+export interface PriceChange {
+  id: number;
+  property_id: string;
+  change_date: string;
+  old_price: number | null;
+  new_price: number | null;
+  change_eur: number | null;
+  change_pct: number | null;
+}
+
+export interface ExclusiveDetail {
+  id: number;
+  property_id: string;
+  owner_name: string | null;
+  sign_date: string | null;
+  end_date: string | null;
 }
 
 // ── Auth ──

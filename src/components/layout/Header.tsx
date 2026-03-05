@@ -102,6 +102,21 @@ export function Header({
 
         <span className="text-xs text-white/50 hidden md:inline">{periodLabel}</span>
 
+        {/* Search button */}
+        <button
+          onClick={() => document.dispatchEvent(new Event('open-search-palette'))}
+          className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white/70 hover:text-white rounded-lg px-2.5 py-1.5 text-sm transition-colors"
+          title="Αναζήτηση (Ctrl+K)"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
+          </svg>
+          <span className="hidden sm:inline">Αναζήτηση</span>
+          <kbd className="hidden md:inline-flex px-1 py-0.5 text-[10px] bg-white/10 rounded text-white/50 font-mono ml-1">
+            Ctrl+K
+          </kbd>
+        </button>
+
         {/* User menu */}
         <div className="flex items-center gap-2 ml-4 pl-4 border-l border-white/15">
           <span className="text-xs text-white/50 hidden lg:inline">{userEmail}</span>

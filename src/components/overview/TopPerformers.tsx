@@ -1,4 +1,5 @@
 import type { TopPerformer } from '../../lib/metrics';
+import { AgentLink } from '../ui/AgentLink';
 
 interface Props {
   topAgentLarissa: TopPerformer | null;
@@ -31,7 +32,7 @@ function PerformerCard({
       </div>
       {performer ? (
         <div>
-          <div className="text-lg font-bold text-text-primary">{performer.name}</div>
+          <AgentLink agentId={performer.agent_id} name={performer.name} className="text-lg font-bold text-text-primary" />
           <div className="mt-2 text-2xl font-bold" style={{ color: accent }}>
             {formatGci(performer.value)}
           </div>

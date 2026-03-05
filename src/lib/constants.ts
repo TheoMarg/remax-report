@@ -4,7 +4,7 @@
  */
 
 // Λάρισα - Individual agents
-const LARISSA_INDIVIDUAL = [1, 2, 3, 4, 11, 12, 13, 14, 15, 16, 17];
+const LARISSA_INDIVIDUAL = [1, 2, 3, 4, 11, 12, 13, 14, 15, 16, 17, 106];
 
 // Κατερίνη - Individual agents (108 = duplicate of 7, included for data)
 const KATERINI_INDIVIDUAL = [5, 6, 7, 8, 9, 10, 18, 19, 108];
