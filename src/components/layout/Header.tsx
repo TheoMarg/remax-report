@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import type { PeriodType } from '../../lib/types';
 
 const MONTH_NAMES_EL = [
@@ -32,21 +33,31 @@ export function Header({
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
   return (
-    <header className="bg-[#0C1E3C] text-white px-6 py-3 flex flex-wrap items-center justify-between gap-2">
+    <motion.header
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="hero-gradient text-white px-6 py-3 flex flex-wrap items-center justify-between gap-2"
+    >
       <div className="flex items-center gap-4">
-        <h1 className="text-lg font-bold tracking-tight">RE/MAX Delta Ktima</h1>
-        <span className="text-[#8A94A0] text-sm hidden sm:inline">Αναφορά Broker</span>
+        <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center text-sm font-bold">
+          {userEmail.charAt(0).toUpperCase()}
+        </div>
+        <div>
+          <h1 className="text-lg font-bold tracking-tight">RE/MAX Delta Ktima</h1>
+          <span className="text-white/60 text-xs hidden sm:inline">Αναφορά Broker</span>
+        </div>
       </div>
 
       <div className="flex items-center gap-3">
         {/* Period type selector */}
-        <div className="flex bg-[#1B5299]/30 rounded-md overflow-hidden text-sm">
+        <div className="flex bg-white/10 rounded-lg overflow-hidden text-sm">
           {(['month', 'quarter', 'year'] as PeriodType[]).map((t) => (
             <button
               key={t}
               onClick={() => onPeriodTypeChange(t)}
-              className={`px-3 py-1 transition-colors ${
-                periodType === t ? 'bg-[#1B5299] text-white' : 'text-[#8A94A0] hover:text-white'
+              className={`px-3 py-1.5 transition-colors ${
+                periodType === t ? 'bg-white/20 text-white font-medium' : 'text-white/60 hover:text-white'
               }`}
             >
               {t === 'month' ? 'Μήνας' : t === 'quarter' ? 'Τρίμηνο' : 'Ετος'}
@@ -58,7 +69,7 @@ export function Header({
         <select
           value={year}
           onChange={(e) => onYearChange(Number(e.target.value))}
-          className="bg-[#1B5299]/30 text-white text-sm rounded-md px-2 py-1 border-none"
+          className="bg-white/10 text-white text-sm rounded-lg px-2 py-1.5 border-none"
         >
           {years.map((y) => (
             <option key={y} value={y}>{y}</option>
@@ -70,7 +81,7 @@ export function Header({
           <select
             value={value}
             onChange={(e) => onValueChange(Number(e.target.value))}
-            className="bg-[#1B5299]/30 text-white text-sm rounded-md px-2 py-1 border-none"
+            className="bg-white/10 text-white text-sm rounded-lg px-2 py-1.5 border-none"
           >
             {MONTH_NAMES_EL.map((name, i) => (
               <option key={i + 1} value={i + 1}>{name}</option>
@@ -81,7 +92,7 @@ export function Header({
           <select
             value={value}
             onChange={(e) => onValueChange(Number(e.target.value))}
-            className="bg-[#1B5299]/30 text-white text-sm rounded-md px-2 py-1 border-none"
+            className="bg-white/10 text-white text-sm rounded-lg px-2 py-1.5 border-none"
           >
             {[1, 2, 3, 4].map((q) => (
               <option key={q} value={q}>Q{q}</option>
@@ -89,19 +100,19 @@ export function Header({
           </select>
         )}
 
-        <span className="text-xs text-[#8A94A0] hidden md:inline">{periodLabel}</span>
+        <span className="text-xs text-white/50 hidden md:inline">{periodLabel}</span>
 
         {/* User menu */}
-        <div className="flex items-center gap-2 ml-4 pl-4 border-l border-[#1B5299]/30">
-          <span className="text-xs text-[#8A94A0] hidden lg:inline">{userEmail}</span>
+        <div className="flex items-center gap-2 ml-4 pl-4 border-l border-white/15">
+          <span className="text-xs text-white/50 hidden lg:inline">{userEmail}</span>
           <button
             onClick={onSignOut}
-            className="text-xs text-[#8A94A0] hover:text-white transition-colors"
+            className="text-xs text-white/50 hover:text-white transition-colors"
           >
             Αποσύνδεση
           </button>
         </div>
       </div>
-    </header>
+    </motion.header>
   );
 }

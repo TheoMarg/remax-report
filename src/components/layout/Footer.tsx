@@ -23,12 +23,12 @@ export function Footer() {
     : null;
 
   return (
-    <footer className="bg-white border-t border-[#DDD8D0] px-6 py-2 text-xs text-[#6B7280] flex justify-between">
+    <footer className="bg-surface-card border-t border-border-default px-6 py-2 text-xs text-text-muted flex justify-between">
       <span>
         Τελευταίος συγχρονισμός: {syncDate ?? 'Μη διαθέσιμο'}
       </span>
       <span>
-        RE/MAX Delta Ktima &middot; Εμπιστευτικό
+        RE/MAX Delta Ktima &middot; Εμπιστευτικό &middot; Built by Theodoros
       </span>
     </footer>
   );

@@ -27,34 +27,19 @@ export function ChartTab({ agents, hasAcc, companyAvg }: Props) {
     <div className="h-[400px]">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 60 }}>
-          <XAxis
-            dataKey="name"
-            tick={{ fontSize: 11, fill: '#8A94A0' }}
-            angle={-45}
-            textAnchor="end"
-            interval={0}
-          />
-          <YAxis tick={{ fontSize: 11, fill: '#8A94A0' }} />
+          <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#8A94A0' }} angle={-45} textAnchor="end" interval={0} axisLine={false} tickLine={false} />
+          <YAxis tick={{ fontSize: 11, fill: '#8A94A0' }} axisLine={false} tickLine={false} />
           <Tooltip
-            contentStyle={{
-              borderRadius: 8,
-              border: '1px solid #DDD8D0',
-              fontSize: 12,
-            }}
+            contentStyle={{ borderRadius: 12, border: '1px solid #DDD8D0', fontSize: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
           />
           <Legend wrapperStyle={{ fontSize: 12 }} />
-          <Bar dataKey="CRM" fill="#1B5299" radius={[3, 3, 0, 0]} />
-          {hasAcc && <Bar dataKey="Accountability Report" fill="#C9961A" radius={[3, 3, 0, 0]} />}
+          <Bar dataKey="CRM" fill="#1B5299" radius={[4, 4, 0, 0]} />
+          {hasAcc && <Bar dataKey="Accountability Report" fill="#C9961A" radius={[4, 4, 0, 0]} />}
           <ReferenceLine
             y={companyAvg}
             stroke="#0C1E3C"
             strokeDasharray="6 3"
-            label={{
-              value: `avg ${companyAvg.toLocaleString('el-GR')}`,
-              position: 'right',
-              fontSize: 11,
-              fill: '#0C1E3C',
-            }}
+            label={{ value: `avg ${companyAvg.toLocaleString('el-GR')}`, position: 'right', fontSize: 11, fill: '#0C1E3C' }}
           />
         </BarChart>
       </ResponsiveContainer>

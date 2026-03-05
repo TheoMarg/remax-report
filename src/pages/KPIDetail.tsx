@@ -1,10 +1,13 @@
 import { useState, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import type { Period } from '../lib/types';
 import { useMetrics } from '../hooks/useMetrics';
 import { useTeams, useTeamMembers } from '../hooks/useAgents';
 import { KPI_DEFS } from '../lib/metrics';
 import { KpiSelector } from '../components/kpis/KpiSelector';
 import { MetricSection } from '../components/kpis/MetricSection';
+import { AnimatedSection } from '../components/animations/AnimatedSection';
+import { ExportPdfButton } from '../components/export/ExportPdfButton';
 
 interface Props {
   period: Period;
@@ -21,26 +24,22 @@ export function KPIDetail({ period }: Props) {
     [activeKpi],
   );
 
-  // Loading
   if (isLoading) {
     return (
-      <div className="p-6">
-        <div className="flex items-center gap-3">
-          <div className="w-5 h-5 border-2 border-[#1B5299] border-t-transparent rounded-full animate-spin" />
-          <span className="text-sm text-[#8A94A0]">Φόρτωση δεδομένων...</span>
+      <div className="p-8 flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-3 border-brand-blue border-t-transparent rounded-full animate-spin" />
+          <span className="text-sm text-text-muted">Φορτωση δεδομενων...</span>
         </div>
       </div>
     );
   }
 
-  // Error
   if (error) {
     return (
-      <div className="p-6">
-        <div className="bg-[#DC3545]/10 border border-[#DC3545]/20 rounded-lg p-4">
-          <span className="text-sm text-[#DC3545]">
-            Σφάλμα φόρτωσης: {error instanceof Error ? error.message : JSON.stringify(error)}
-          </span>
+      <div className="p-8">
+        <div className="bg-brand-red/5 border border-brand-red/20 rounded-xl p-5">
+          <span className="text-sm text-brand-red">Σφαλμα φορτωσης: {error instanceof Error ? error.message : JSON.stringify(error)}</span>
         </div>
       </div>
     );
@@ -49,23 +48,40 @@ export function KPIDetail({ period }: Props) {
   if (!metrics) return null;
 
   return (
-    <div className="p-6 space-y-5">
-      {/* Title */}
-      <h2 className="text-xl font-bold text-[#0C1E3C]">
-        KPIs Αναλυτικά — {period.label}
-      </h2>
+    <div id="page-kpis" className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1600px] mx-auto">
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="hero-gradient rounded-2xl p-6 sm:p-8 text-white relative overflow-hidden"
+      >
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+        <div className="relative z-10 flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-white/60 bg-white/10 px-2.5 py-1 rounded-full mb-3">
+              KPIs ΑΝΑΛΥΤΙΚΑ
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-bold">{period.label}</h2>
+            <p className="text-white/60 text-sm mt-1">7 βασικοι δεικτες απόδοσης</p>
+          </div>
+          <ExportPdfButton elementId="page-kpis" filename={`kpis-${period.label}.pdf`} />
+        </div>
+      </motion.div>
 
-      {/* KPI Selector */}
-      <KpiSelector kpis={KPI_DEFS} activeKey={activeKpi} onChange={setActiveKpi} />
+      <AnimatedSection delay={0.15}>
+        <KpiSelector kpis={KPI_DEFS} activeKey={activeKpi} onChange={setActiveKpi} />
+      </AnimatedSection>
 
-      {/* Active Metric Section */}
-      <MetricSection
-        def={activeDef}
-        metrics={metrics}
-        teams={teams ?? []}
-        teamMembers={teamMembers ?? []}
-        period={period}
-      />
+      <AnimatedSection delay={0.25}>
+        <MetricSection
+          def={activeDef}
+          metrics={metrics}
+          teams={teams ?? []}
+          teamMembers={teamMembers ?? []}
+          period={period}
+        />
+      </AnimatedSection>
     </div>
   );
 }

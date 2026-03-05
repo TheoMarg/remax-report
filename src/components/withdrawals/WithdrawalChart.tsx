@@ -10,9 +10,9 @@ function CustomTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null;
   const d = payload[0].payload;
   return (
-    <div className="bg-white border border-[#DDD8D0] rounded-lg shadow-lg p-3 text-xs">
-      <div className="font-semibold text-[#0C1E3C] mb-1">{d.name}</div>
-      <div className="text-[#3A4550]">
+    <div className="bg-surface-card border border-border-default rounded-xl shadow-lg p-3 text-xs">
+      <div className="font-semibold text-text-primary mb-1">{d.name}</div>
+      <div className="text-text-secondary">
         {d.value.toLocaleString('el-GR')} αποσύρσεις ({d.pct}%)
       </div>
     </div>
@@ -28,8 +28,7 @@ function renderLabel({ cx, cy, midAngle, innerRadius, outerRadius, pct }: any) {
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
   if (pct < 5) return null;
   return (
-    <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central"
-          fontSize={11} fontWeight={700}>
+    <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={700}>
       {pct}%
     </text>
   );
@@ -48,45 +47,30 @@ export function WithdrawalChart({ categories }: Props) {
 
   if (data.length === 0) {
     return (
-      <div className="bg-white rounded-lg border border-[#DDD8D0] p-5 h-[300px] flex items-center justify-center">
-        <span className="text-sm text-[#8A94A0]">Δεν υπάρχουν δεδομένα</span>
+      <div className="card-premium p-5 h-[300px] flex items-center justify-center">
+        <span className="text-sm text-text-muted">Δεν υπάρχουν δεδομένα</span>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg border border-[#DDD8D0] p-5">
-      <h3 className="text-sm font-semibold text-[#0C1E3C] mb-2">Κατανομή Κατηγοριών</h3>
+    <div className="card-premium p-5">
+      <h3 className="text-sm font-semibold text-text-primary mb-2">Κατανομή Κατηγοριών</h3>
       <ResponsiveContainer width="100%" height={260}>
         <PieChart>
-          <Pie
-            data={data}
-            cx="50%"
-            cy="50%"
-            innerRadius={50}
-            outerRadius={100}
-            dataKey="value"
-            nameKey="name"
-            paddingAngle={2}
-            strokeWidth={0}
-            label={renderLabel}
-            labelLine={false}
-          >
-            {data.map((d, i) => (
-              <Cell key={i} fill={d.color} />
-            ))}
+          <Pie data={data} cx="50%" cy="50%" innerRadius={50} outerRadius={100} dataKey="value" nameKey="name" paddingAngle={2} strokeWidth={0} label={renderLabel} labelLine={false}>
+            {data.map((d, i) => <Cell key={i} fill={d.color} />)}
           </Pie>
           <Tooltip content={<CustomTooltip />} />
         </PieChart>
       </ResponsiveContainer>
-      {/* Legend */}
       <div className="flex justify-center gap-5 mt-1">
         {data.map(d => (
-          <div key={d.name} className="flex items-center gap-1.5 text-xs text-[#3A4550]">
+          <div key={d.name} className="flex items-center gap-1.5 text-xs text-text-secondary">
             <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.color }} />
             <span>{d.name}</span>
-            <span className="font-bold text-[#0C1E3C]">{d.value.toLocaleString('el-GR')}</span>
-            <span className="text-[10px] text-[#8A94A0]">({d.pct}%)</span>
+            <span className="font-bold text-text-primary">{d.value.toLocaleString('el-GR')}</span>
+            <span className="text-[10px] text-text-muted">({d.pct}%)</span>
           </div>
         ))}
       </div>

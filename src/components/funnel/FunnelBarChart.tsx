@@ -34,12 +34,12 @@ const STAGE_NAMES: Record<string, string> = {
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border border-[#DDD8D0] rounded-lg shadow-lg p-3 text-xs">
-      <div className="font-semibold text-[#0C1E3C] mb-1.5">{label}</div>
+    <div className="bg-surface-card border border-border-default rounded-xl shadow-lg p-3 text-xs">
+      <div className="font-semibold text-text-primary mb-1.5">{label}</div>
       {payload.map((p: { name: string; value: number; color: string }, i: number) => (
         <div key={i} className="flex justify-between gap-4">
           <span style={{ color: p.color }}>{p.name}</span>
-          <span className="font-medium text-[#0C1E3C]">{p.value.toLocaleString('el-GR')}</span>
+          <span className="font-medium text-text-primary">{p.value.toLocaleString('el-GR')}</span>
         </div>
       ))}
     </div>
@@ -47,7 +47,6 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 export function FunnelBarChart({ rows }: Props) {
-  // Top 8 + "Λοιπά" bucket
   const top8 = rows.slice(0, 8);
   const rest = rows.slice(8);
 
@@ -73,48 +72,24 @@ export function FunnelBarChart({ rows }: Props) {
 
   if (chartData.length === 0) {
     return (
-      <div className="bg-white rounded-lg border border-[#DDD8D0] p-5 h-[340px] flex items-center justify-center">
-        <span className="text-sm text-[#8A94A0]">Δεν υπάρχουν δεδομένα</span>
+      <div className="card-premium p-5 h-[340px] flex items-center justify-center">
+        <span className="text-sm text-text-muted">Δεν υπάρχουν δεδομένα</span>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg border border-[#DDD8D0] p-5">
-      <h3 className="text-sm font-semibold text-[#0C1E3C] mb-4">Ανά Υποκατηγορία (Top 8)</h3>
+    <div className="card-premium p-5">
+      <h3 className="text-sm font-semibold text-text-primary mb-4">Ανά Υποκατηγορία (Top 8)</h3>
       <ResponsiveContainer width="100%" height={320}>
         <BarChart data={chartData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#EFECEA" />
-          <XAxis
-            dataKey="name"
-            tick={{ fontSize: 10, fill: '#8A94A0' }}
-            axisLine={{ stroke: '#DDD8D0' }}
-            tickLine={false}
-            interval={0}
-            angle={-25}
-            textAnchor="end"
-            height={60}
-          />
-          <YAxis
-            tick={{ fontSize: 11, fill: '#8A94A0' }}
-            axisLine={false}
-            tickLine={false}
-          />
+          <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#8A94A0' }} axisLine={false} tickLine={false} interval={0} angle={-25} textAnchor="end" height={60} />
+          <YAxis tick={{ fontSize: 11, fill: '#8A94A0' }} axisLine={false} tickLine={false} />
           <Tooltip content={<CustomTooltip />} />
-          <Legend
-            wrapperStyle={{ fontSize: '11px' }}
-            iconType="rect"
-            iconSize={8}
-          />
+          <Legend wrapperStyle={{ fontSize: '11px' }} iconType="rect" iconSize={8} />
           {Object.entries(STAGE_COLORS).map(([key, color]) => (
-            <Bar
-              key={key}
-              dataKey={key}
-              name={STAGE_NAMES[key]}
-              fill={color}
-              radius={[2, 2, 0, 0]}
-              barSize={10}
-            />
+            <Bar key={key} dataKey={key} name={STAGE_NAMES[key]} fill={color} radius={[2, 2, 0, 0]} barSize={10} />
           ))}
         </BarChart>
       </ResponsiveContainer>

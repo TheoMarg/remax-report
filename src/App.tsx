@@ -10,7 +10,9 @@ import { Overview } from './pages/Overview';
 import { KPIDetail } from './pages/KPIDetail';
 import { Withdrawals } from './pages/Withdrawals';
 import { Funnel } from './pages/Funnel';
-import { Placeholder } from './pages/Placeholder';
+import { Properties } from './pages/Properties';
+import { CrmVsAcc } from './pages/CrmVsAcc';
+import { GciRankings } from './pages/GciRankings';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,8 +30,8 @@ function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F7F6F3]">
-        <p className="text-[#8A94A0]">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-surface">
+        <p className="text-text-muted">Loading...</p>
       </div>
     );
   }
@@ -49,18 +51,18 @@ function Dashboard() {
       case 'funnel':
         return <Funnel period={period} />;
       case 'properties':
-        return <Placeholder title="Property Cards" cycle={4} />;
+        return <Properties period={period} />;
       case 'crm-vs-acc':
-        return <Placeholder title="CRM vs Accountability Report" cycle={5} />;
+        return <CrmVsAcc period={period} />;
       case 'gci':
-        return <Placeholder title="Τζίρος & Κατάταξη" cycle={5} />;
+        return <GciRankings period={period} />;
       default:
         return <Overview period={period} />;
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F7F6F3]">
+    <div className="min-h-screen flex flex-col bg-surface">
       <Header
         periodType={periodType}
         year={year}

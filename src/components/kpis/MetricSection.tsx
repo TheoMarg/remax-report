@@ -45,41 +45,18 @@ export function MetricSection({ def, metrics, teams, teamMembers, period }: Prop
   const tabLabels = isExclusives ? [...BASE_TABS, FOUR_CLUB_TAB] : BASE_TABS;
 
   const individuals = useMemo(() => individualsOnly(metrics), [metrics]);
-
-  // Header data
   const crm = useMemo(() => sumField(individuals, def.crmField as keyof CombinedMetric), [individuals, def]);
   const acc = useMemo(
     () => (def.accField ? sumField(individuals, def.accField as keyof CombinedMetric) : 0),
     [individuals, def],
   );
-  const officeBreakdown = useMemo(
-    () => computeOfficeKpiComparison(metrics, def.crmField, def.accField),
-    [metrics, def],
-  );
+  const officeBreakdown = useMemo(() => computeOfficeKpiComparison(metrics, def.crmField, def.accField), [metrics, def]);
+  const allAgents = useMemo(() => rankAgentsByKpi(metrics, def.crmField, def.accField), [metrics, def]);
+  const companyAvg = useMemo(() => computeCompanyAvg(metrics, def.crmField), [metrics, def]);
+  const teamBreakdown = useMemo(() => computeTeamBreakdown(metrics, teams, teamMembers, def.crmField, def.accField), [metrics, teams, teamMembers, def]);
+  const peersLarissa = useMemo(() => rankAgentsByKpi(metrics, def.crmField, def.accField, 'larissa'), [metrics, def]);
+  const peersKaterini = useMemo(() => rankAgentsByKpi(metrics, def.crmField, def.accField, 'katerini'), [metrics, def]);
 
-  // Tab data (lazy — only compute what's needed)
-  const allAgents = useMemo(
-    () => rankAgentsByKpi(metrics, def.crmField, def.accField),
-    [metrics, def],
-  );
-  const companyAvg = useMemo(
-    () => computeCompanyAvg(metrics, def.crmField),
-    [metrics, def],
-  );
-  const teamBreakdown = useMemo(
-    () => computeTeamBreakdown(metrics, teams, teamMembers, def.crmField, def.accField),
-    [metrics, teams, teamMembers, def],
-  );
-  const peersLarissa = useMemo(
-    () => rankAgentsByKpi(metrics, def.crmField, def.accField, 'larissa'),
-    [metrics, def],
-  );
-  const peersKaterini = useMemo(
-    () => rankAgentsByKpi(metrics, def.crmField, def.accField, 'katerini'),
-    [metrics, def],
-  );
-
-  // Office averages for peers tabs
   const larissaAvg = useMemo(() => {
     const o = officeBreakdown.find(o => o.office === 'larissa');
     return o ? o.moPerAgent : 0;
@@ -91,30 +68,20 @@ export function MetricSection({ def, metrics, teams, teamMembers, period }: Prop
 
   const renderTab = () => {
     switch (activeTab) {
-      case 0:
-        return <AgentRankTab agents={allAgents} hasAcc={hasAcc} companyAvg={companyAvg} kpiColor={def.color} />;
-      case 1:
-        return <TeamBreakdownTab teams={teamBreakdown} hasAcc={hasAcc} kpiColor={def.color} />;
-      case 2:
-        return <OfficeVsOfficeTab offices={officeBreakdown} hasAcc={hasAcc} />;
-      case 3:
-        return <PeersTab agents={peersLarissa} hasAcc={hasAcc} officeAvg={larissaAvg} officeName="larissa" />;
-      case 4:
-        return <PeersTab agents={peersKaterini} hasAcc={hasAcc} officeAvg={kateriniAvg} officeName="katerini" />;
-      case 5:
-        return <VsCompanyTab agents={allAgents} companyAvg={companyAvg} />;
-      case 6:
-        return <ChartTab agents={allAgents} hasAcc={hasAcc} companyAvg={companyAvg} />;
-      case 7:
-        return isExclusives ? <FourClubSection period={period} metrics={metrics} /> : null;
-      default:
-        return null;
+      case 0: return <AgentRankTab agents={allAgents} hasAcc={hasAcc} companyAvg={companyAvg} kpiColor={def.color} />;
+      case 1: return <TeamBreakdownTab teams={teamBreakdown} hasAcc={hasAcc} kpiColor={def.color} />;
+      case 2: return <OfficeVsOfficeTab offices={officeBreakdown} hasAcc={hasAcc} />;
+      case 3: return <PeersTab agents={peersLarissa} hasAcc={hasAcc} officeAvg={larissaAvg} officeName="larissa" />;
+      case 4: return <PeersTab agents={peersKaterini} hasAcc={hasAcc} officeAvg={kateriniAvg} officeName="katerini" />;
+      case 5: return <VsCompanyTab agents={allAgents} companyAvg={companyAvg} />;
+      case 6: return <ChartTab agents={allAgents} hasAcc={hasAcc} companyAvg={companyAvg} />;
+      case 7: return isExclusives ? <FourClubSection period={period} metrics={metrics} /> : null;
+      default: return null;
     }
   };
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <MetricHeader
         def={def}
         crm={crm}
@@ -125,8 +92,7 @@ export function MetricSection({ def, metrics, teams, teamMembers, period }: Prop
         companyAvg={companyAvg}
       />
 
-      {/* Tab bar */}
-      <div className="bg-white rounded-lg border border-[#DDD8D0] p-4">
+      <div className="card-premium p-4">
         <div className="flex flex-wrap gap-1 mb-4">
           {tabLabels.map((label, i) => {
             const isFourClub = label === FOUR_CLUB_TAB;
@@ -134,14 +100,14 @@ export function MetricSection({ def, metrics, teams, teamMembers, period }: Prop
               <button
                 key={label}
                 onClick={() => setActiveTab(i)}
-                className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
+                className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${
                   isFourClub ? 'font-bold' : 'font-medium'
                 } ${
                   activeTab === i
-                    ? 'bg-[#0C1E3C] text-white'
+                    ? 'bg-navy text-white shadow-sm'
                     : isFourClub
-                    ? 'text-[#0C1E3C] bg-[#E2EFDA] hover:bg-[#C6EFCE]'
-                    : 'text-[#8A94A0] hover:bg-[#F7F6F3] hover:text-[#0C1E3C]'
+                    ? 'text-text-primary bg-brand-green/10 hover:bg-brand-green/20'
+                    : 'text-text-muted hover:bg-surface hover:text-text-primary'
                 }`}
               >
                 {label}
@@ -149,8 +115,6 @@ export function MetricSection({ def, metrics, teams, teamMembers, period }: Prop
             );
           })}
         </div>
-
-        {/* Active tab content */}
         {renderTab()}
       </div>
     </div>

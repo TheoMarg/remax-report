@@ -15,10 +15,10 @@ export function KpiSelector({ kpis, activeKey, onChange }: Props) {
           <button
             key={kpi.key}
             onClick={() => onChange(kpi.key)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+            className={`px-4 py-1.5 rounded-xl text-sm font-medium transition-all ${
               isActive
-                ? 'text-white shadow-sm'
-                : 'bg-white text-[#0C1E3C] border border-[#DDD8D0] hover:border-[#8A94A0]'
+                ? 'text-white shadow-md'
+                : 'bg-surface-card text-text-primary border border-border-default hover:border-text-muted hover:shadow-sm'
             }`}
             style={isActive ? { backgroundColor: kpi.color } : undefined}
           >
