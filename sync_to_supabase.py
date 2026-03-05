@@ -272,6 +272,7 @@ def sync_properties(sqlite_conn, supabase, canonical_ids):
             'source':           r['source'],
             'updated_at':       normalize_timestamp(r['updated_at']),
             'broker_code':      r['broker_code'],
+            'transaction_type': r['transaction_type'],
         })
 
     result = batch_upsert(supabase, 'properties', data, 'property_id')
@@ -448,11 +449,30 @@ def sync_ypodikseis(sqlite_conn, supabase, canonical_ids):
 
 
 def sync_accountability(sqlite_conn, supabase, canonical_ids):
-    """Sync accountability_reports with dedup: agent_id + report_date → keep latest."""
-    logger.info("Syncing accountability_reports (with dedup)...")
+    """Sync accountability_reports: aggregate by agent_id + date (SUM numeric fields)."""
+    logger.info("Syncing accountability_reports (with aggregation)...")
     rows = sqlite_conn.execute("SELECT * FROM accountability_reports").fetchall()
 
-    # Dedup by (agent_id, date(report_date)), keep latest timestamp
+    # Numeric fields to SUM when multiple entries exist for same (agent, date)
+    NUMERIC_FIELDS = [
+        'cold_calls', 'follow_up', 'viber_sms', 'mail_newsletter',
+        'social_media', 'videos', 'follow_up_assignment', 'follow_up_demand',
+        'leads_total', 'leads_in_person', 'cultivation_area', 'eight_by_eight',
+        'thirty_three_touches', 'havent_mets', 'mets', 'listings',
+        'meetings_sale', 'meetings_rent', 'meetings_buyer', 'meetings_seller',
+        'meetings_landlord', 'meetings_tenant', 'showings_sale', 'showings_rent',
+        'exclusive_mandate', 'simple_mandate_sale', 'exclusive_rent_hi',
+        'exclusive_rent_lo', 'simple_rent', 'signed_offer', 'deposit',
+        'appraisals', 'closing_sale', 'closing_rent',
+        'transactions_rent_hi', 'transactions_rent_lo',
+        'transactions_sale_hi', 'transactions_sale_lo',
+        'cooperations', 'photography', 'a4_flyers', 'circular',
+        'open_house', 'signage', 'matterport', 'video_property', 'ads',
+        'partner_proposal', 'referral', 'conference', 'advertising',
+        'absences', 'letter', 'loan', 'proposal',
+    ]
+
+    # Aggregate by (agent_id, date): SUM numerics, keep latest timestamp/comments
     grouped: dict[tuple, dict] = {}
     for r in rows:
         if r['agent_id'] not in canonical_ids:
@@ -465,78 +485,36 @@ def sync_accountability(sqlite_conn, supabase, canonical_ids):
         date_key = ts[:10]
         dedup_key = (r['agent_id'], date_key)
 
-        rec = {
-            'agent_id':              r['agent_id'],
-            'report_date':           ts,
-            'year':                  r['year'] or None,
-            'month':                 r['month'] or None,
-            'week':                  r['week'] or None,
-            'cold_calls':            r['cold_calls'] or 0,
-            'follow_up':             r['follow_up'] or 0,
-            'viber_sms':             r['viber_sms'] or 0,
-            'mail_newsletter':       r['mail_newsletter'] or 0,
-            'social_media':          r['social_media'] or 0,
-            'videos':                r['videos'] or 0,
-            'follow_up_assignment':  r['follow_up_assignment'] or 0,
-            'follow_up_demand':      r['follow_up_demand'] or 0,
-            'leads_total':           r['leads_total'] or 0,
-            'leads_in_person':       r['leads_in_person'] or 0,
-            'cultivation_area':      r['cultivation_area'] or 0,
-            'eight_by_eight':        r['eight_by_eight'] or 0,
-            'thirty_three_touches':  r['thirty_three_touches'] or 0,
-            'havent_mets':           r['havent_mets'] or 0,
-            'mets':                  r['mets'] or 0,
-            'listings':              r['listings'] or 0,
-            'meetings_sale':         r['meetings_sale'] or 0,
-            'meetings_rent':         r['meetings_rent'] or 0,
-            'meetings_buyer':        r['meetings_buyer'] or 0,
-            'meetings_seller':       r['meetings_seller'] or 0,
-            'meetings_landlord':     r['meetings_landlord'] or 0,
-            'meetings_tenant':       r['meetings_tenant'] or 0,
-            'showings_sale':         r['showings_sale'] or 0,
-            'showings_rent':         r['showings_rent'] or 0,
-            'exclusive_mandate':     r['exclusive_mandate'] or 0,
-            'simple_mandate_sale':   r['simple_mandate_sale'] or 0,
-            'exclusive_rent_hi':     r['exclusive_rent_hi'] or 0,
-            'exclusive_rent_lo':     r['exclusive_rent_lo'] or 0,
-            'simple_rent':           r['simple_rent'] or 0,
-            'signed_offer':          r['signed_offer'] or 0,
-            'deposit':               r['deposit'] or 0,
-            'appraisals':            r['appraisals'] or 0,
-            'closing_sale':          r['closing_sale'] or 0,
-            'closing_rent':          r['closing_rent'] or 0,
-            'transactions_rent_hi':  r['transactions_rent_hi'] or 0,
-            'transactions_rent_lo':  r['transactions_rent_lo'] or 0,
-            'transactions_sale_hi':  r['transactions_sale_hi'] or 0,
-            'transactions_sale_lo':  r['transactions_sale_lo'] or 0,
-            'cooperations':          r['cooperations'] or 0,
-            'photography':           r['photography'] or 0,
-            'a4_flyers':             r['a4_flyers'] or 0,
-            'circular':              r['circular'] or 0,
-            'open_house':            r['open_house'] or 0,
-            'signage':               r['signage'] or 0,
-            'matterport':            r['matterport'] or 0,
-            'video_property':        r['video_property'] or 0,
-            'ads':                   r['ads'] or 0,
-            'partner_proposal':      r['partner_proposal'] or 0,
-            'comments':              r['comments'],
-            'referral':              r['referral'] or 0,
-            'conference':            r['conference'] or 0,
-            'advertising':           r['advertising'] or 0,
-            'absences':              r['absences'] or 0,
-            'letter':                r['letter'] or 0,
-            'loan':                  r['loan'] or 0,
-            'proposal':              r['proposal'] or 0,
-            'extra_comments':        r['extra_comments'],
-            'source':                r['source'],
-        }
-
         existing = grouped.get(dedup_key)
-        if existing is None or ts > existing['report_date']:
+        if existing is None:
+            # First entry for this (agent, date)
+            rec = {
+                'agent_id':      r['agent_id'],
+                'report_date':   ts,
+                'year':          r['year'] or None,
+                'month':         r['month'] or None,
+                'week':          r['week'] or None,
+                'comments':      r['comments'],
+                'extra_comments': r['extra_comments'],
+                'source':        r['source'],
+            }
+            for f in NUMERIC_FIELDS:
+                rec[f] = r[f] or 0
             grouped[dedup_key] = rec
+        else:
+            # Accumulate: SUM numeric fields
+            for f in NUMERIC_FIELDS:
+                existing[f] += (r[f] or 0)
+            # Keep latest timestamp and comments
+            if ts > existing['report_date']:
+                existing['report_date'] = ts
+                if r['comments']:
+                    existing['comments'] = r['comments']
+                if r['extra_comments']:
+                    existing['extra_comments'] = r['extra_comments']
 
     data = list(grouped.values())
-    logger.info(f"  accountability: {len(rows)} raw → {len(data)} after dedup")
+    logger.info(f"  accountability: {len(rows)} raw → {len(data)} after aggregation")
 
     result = batch_upsert(supabase, 'accountability_reports', data,
                           'agent_id,report_date')
