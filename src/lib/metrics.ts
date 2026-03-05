@@ -18,7 +18,7 @@ export interface KpiSummary {
   acc: number;
   delta: number;       // crm - acc
   color: string;
-  byOffice: { office: string; crm: number }[];
+  byOffice: { office: string; crm: number; sale?: number; rent?: number }[];
   sale?: number;       // Πώληση count (for exclusives)
   rent?: number;       // Ενοικίαση count (for exclusives)
 }
@@ -141,14 +141,49 @@ export function computeKpis(metrics: CombinedMetric[]): KpiSummary[] {
     return a.localeCompare(b);
   });
 
+  // Sale/Rent field mapping
+  const saleRentFields: Record<string, { sale: string; rent: string }> = {
+    registrations: { sale: 'crm_registrations_sale', rent: 'crm_registrations_rent' },
+    exclusives:    { sale: 'crm_exclusives_sale',    rent: 'crm_exclusives_rent' },
+    published:     { sale: 'crm_published_sale',     rent: 'crm_published_rent' },
+    showings:      { sale: 'crm_showings_sale',      rent: 'crm_showings_rent' },
+  };
+
+  // Team metrics (is_team rows)
+  const teamMetrics = metrics.filter(m => m.is_team);
+
   return KPI_DEFS.map(def => {
     const crmKey = def.crmField as keyof CombinedMetric;
     const crm = sumField(metrics, crmKey);  // ALL agents for company total
     const acc = def.accField ? sumField(individuals, def.accField as keyof CombinedMetric) : 0;
-    const byOffice = officeNames.map(office => ({
-      office,
-      crm: sumField(officeMap.get(office)!, crmKey),
-    }));
+    const sr = saleRentFields[def.key];
+
+    const byOffice: KpiSummary['byOffice'] = officeNames.map(office => {
+      const officeRows = officeMap.get(office)!;
+      const entry: KpiSummary['byOffice'][0] = {
+        office,
+        crm: sumField(officeRows, crmKey),
+      };
+      if (sr) {
+        entry.sale = sumField(officeRows, sr.sale as keyof CombinedMetric);
+        entry.rent = sumField(officeRows, sr.rent as keyof CombinedMetric);
+      }
+      return entry;
+    });
+
+    // Add a "teams" aggregation row
+    if (teamMetrics.length > 0) {
+      const teamEntry: KpiSummary['byOffice'][0] = {
+        office: 'teams',
+        crm: sumField(teamMetrics, crmKey),
+      };
+      if (sr) {
+        teamEntry.sale = sumField(teamMetrics, sr.sale as keyof CombinedMetric);
+        teamEntry.rent = sumField(teamMetrics, sr.rent as keyof CombinedMetric);
+      }
+      if (teamEntry.crm > 0) byOffice.push(teamEntry);
+    }
+
     const result: KpiSummary = {
       key: def.key,
       label: def.label,
@@ -158,19 +193,10 @@ export function computeKpis(metrics: CombinedMetric[]): KpiSummary[] {
       color: def.color,
       byOffice,
     };
-    // Add Πώληση/Ενοικίαση breakdown
-    if (def.key === 'registrations') {
-      result.sale = sumField(metrics, 'crm_registrations_sale');
-      result.rent = sumField(metrics, 'crm_registrations_rent');
-    } else if (def.key === 'exclusives') {
-      result.sale = sumField(metrics, 'crm_exclusives_sale');
-      result.rent = sumField(metrics, 'crm_exclusives_rent');
-    } else if (def.key === 'published') {
-      result.sale = sumField(metrics, 'crm_published_sale');
-      result.rent = sumField(metrics, 'crm_published_rent');
-    } else if (def.key === 'showings') {
-      result.sale = sumField(metrics, 'crm_showings_sale');
-      result.rent = sumField(metrics, 'crm_showings_rent');
+    // Add global Πώληση/Ενοικίαση breakdown
+    if (sr) {
+      result.sale = sumField(metrics, sr.sale as keyof CombinedMetric);
+      result.rent = sumField(metrics, sr.rent as keyof CombinedMetric);
     }
     return result;
   });
@@ -646,6 +672,119 @@ export function computeWithdrawalsByTeam(
       total: v.passive + v.active + v.closings,
     }))
     .sort((a, b) => b.total - a.total);
+}
+
+// ══════════════════════════════════════════════════════════
+// ── Funnel by Type (Cycle 3)
+// ══════════════════════════════════════════════════════════
+
+/** Aggregate FunnelRow[] into per-subcategory summaries with conv% */
+// ══════════════════════════════════════════════════════════
+// ── CRM vs Accountability (Cycle 5)
+// ══════════════════════════════════════════════════════════
+
+export interface CrmVsAccRow {
+  key: string;
+  label: string;
+  crm: number;
+  acc: number;
+  delta: number;
+  pctDiff: number;
+}
+
+export interface GciRanking {
+  agent_id: number;
+  name: string;
+  office: string | null;
+  gci: number;
+  rank: number;
+}
+
+/** Company-level CRM vs ACC comparison for KPIs that have an ACC counterpart */
+export function computeCrmVsAccSummary(metrics: CombinedMetric[]): CrmVsAccRow[] {
+  const individuals = individualsOnly(metrics);
+
+  return KPI_DEFS
+    .filter(def => def.accField !== null)
+    .map(def => {
+      const crmKey = def.crmField as keyof CombinedMetric;
+      const accKey = def.accField as keyof CombinedMetric;
+      const crm = sumField(metrics, crmKey);
+      const acc = sumField(individuals, accKey);
+      const delta = crm - acc;
+      const pctDiff = acc > 0
+        ? Math.round(((crm - acc) / acc) * 1000) / 10
+        : crm > 0 ? 100 : 0;
+      return { key: def.key, label: def.label, crm, acc, delta, pctDiff };
+    });
+}
+
+/** Find the agent with the largest |CRM - ACC| deviation across all KPIs */
+export function computeAgentMaxDeviation(
+  metrics: CombinedMetric[],
+): { agent: string; kpi: string; delta: number } | null {
+  const individuals = individualsOnly(metrics);
+  const defsWithAcc = KPI_DEFS.filter(d => d.accField !== null);
+
+  const agentMap = new Map<number, { name: string; fields: Record<string, { crm: number; acc: number }> }>();
+
+  for (const m of individuals) {
+    if (!agentMap.has(m.agent_id)) {
+      agentMap.set(m.agent_id, {
+        name: m.canonical_name || `Agent #${m.agent_id}`,
+        fields: {},
+      });
+    }
+    const entry = agentMap.get(m.agent_id)!;
+    for (const def of defsWithAcc) {
+      const crmKey = def.crmField as keyof CombinedMetric;
+      const accKey = def.accField as keyof CombinedMetric;
+      if (!entry.fields[def.key]) entry.fields[def.key] = { crm: 0, acc: 0 };
+      entry.fields[def.key].crm += Number(m[crmKey]) || 0;
+      entry.fields[def.key].acc += Number(m[accKey]) || 0;
+    }
+  }
+
+  let maxDelta = 0;
+  let result: { agent: string; kpi: string; delta: number } | null = null;
+
+  for (const [, agent] of agentMap) {
+    for (const [kpiKey, vals] of Object.entries(agent.fields)) {
+      const absDelta = Math.abs(vals.crm - vals.acc);
+      if (absDelta > maxDelta) {
+        maxDelta = absDelta;
+        const def = defsWithAcc.find(d => d.key === kpiKey)!;
+        result = { agent: agent.name, kpi: def.label, delta: vals.crm - vals.acc };
+      }
+    }
+  }
+
+  return result;
+}
+
+/** Agents sorted by GCI descending with rank numbers */
+export function computeGciRankings(metrics: CombinedMetric[]): GciRanking[] {
+  const individuals = individualsOnly(metrics);
+
+  const agentMap = new Map<number, { name: string; office: string | null; gci: number }>();
+  for (const m of individuals) {
+    const existing = agentMap.get(m.agent_id);
+    const gci = Number(m.gci) || 0;
+    if (existing) {
+      existing.gci += gci;
+    } else {
+      agentMap.set(m.agent_id, {
+        name: m.canonical_name || `Agent #${m.agent_id}`,
+        office: m.office,
+        gci,
+      });
+    }
+  }
+
+  return Array.from(agentMap.entries())
+    .map(([agent_id, v]) => ({ agent_id, ...v }))
+    .sort((a, b) => b.gci - a.gci)
+    .map((a, i) => ({ ...a, rank: i + 1 }));
 }
 
 // ══════════════════════════════════════════════════════════

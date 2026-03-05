@@ -125,6 +125,80 @@ export interface Period {
   label: string;   // 'Φεβρουάριος 2026' / 'Q1 2026' / '2026'
 }
 
+// ── Closing with Property (joined) ──
+
+export interface ClosingWithProperty {
+  id: number;
+  agent_id: number | null;
+  property_id: string | null;
+  property_code: string | null;
+  closing_date: string | null;
+  closing_type: string | null;
+  price: number | null;
+  gci: number | null;
+  source: string;
+  properties: {
+    property_id: string;
+    address: string | null;
+    area: string | null;
+    category: string | null;
+    subcategory: string | null;
+    price: number | null;
+    size_sqm: number | null;
+    bedrooms: number | null;
+    is_exclusive: boolean | null;
+    first_pub_date: string | null;
+    registration_date: string | null;
+  };
+}
+
+// ── Showing ──
+
+export interface Showing {
+  id: number;
+  agent_id: number | null;
+  property_id: string | null;
+  showing_date: string | null;
+  client_name: string | null;
+  manager_name: string | null;
+}
+
+// ── Stage Duration ──
+
+export interface StageDuration {
+  from: string;       // event_type
+  to: string;         // event_type
+  fromLabel: string;
+  toLabel: string;
+  days: number;
+  fromDate: string;
+  toDate: string;
+}
+
+// ── Stage Summary Row ──
+
+export interface StageSummaryRow {
+  from: string;
+  to: string;
+  label: string;
+  avgDays: number;
+  minDays: number;
+  maxDays: number;
+  count: number;
+}
+
+// ── Property Card Data ──
+
+export interface PropertyCardData {
+  closing: ClosingWithProperty;
+  agentName: string;
+  events: PropertyEvent[];
+  showings: Showing[];
+  stages: StageDuration[];
+  totalDaysToClose: number | null;
+  listToCloseRatio: number | null;
+}
+
 // ── Auth ──
 
 export type UserRole = 'broker' | 'admin' | 'team_leader' | 'agent' | 'anon';
