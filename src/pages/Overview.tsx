@@ -3,6 +3,9 @@ import { motion } from 'framer-motion';
 import type { Period } from '../lib/types';
 import { useMetrics } from '../hooks/useMetrics';
 import { useTrend } from '../hooks/useTrend';
+import { usePropertyJourneys } from '../hooks/usePropertyJourneys';
+import { useConversionRates } from '../hooks/useConversionRates';
+import { useQualityMetrics } from '../hooks/useQualityMetrics';
 import {
   computeKpis,
   computeTopAgent,
@@ -13,6 +16,8 @@ import {
 } from '../lib/metrics';
 import { TopPerformers } from '../components/overview/TopPerformers';
 import { KpiCards } from '../components/overview/KpiCards';
+import { ConversionCards } from '../components/overview/ConversionCards';
+import { QualityCards } from '../components/overview/QualityCards';
 import { SalesFunnel } from '../components/overview/SalesFunnel';
 import { TrendChart } from '../components/overview/TrendChart';
 import { OfficeComparison } from '../components/overview/OfficeComparison';
@@ -26,6 +31,11 @@ interface Props {
 export function Overview({ period }: Props) {
   const { data: metrics, isLoading, error } = useMetrics(period);
   const { data: trendRaw, isLoading: trendLoading } = useTrend(period);
+  const { data: journeys = [] } = usePropertyJourneys(period);
+
+  // v2: conversion rates & quality metrics (total + by office)
+  const { total: convTotal, segments: convByOffice } = useConversionRates(journeys, 'office');
+  const { total: qualityTotal, segments: qualityByOffice } = useQualityMetrics(journeys, 'office');
 
   const kpis = useMemo(() => (metrics ? computeKpis(metrics) : []), [metrics]);
   const topAgentLarissa = useMemo(() => (metrics ? computeTopAgent(metrics, 'larissa') : null), [metrics]);
@@ -105,8 +115,22 @@ export function Overview({ period }: Props) {
         <KpiCards kpis={kpis} />
       </AnimatedSection>
 
+      {/* v2: Conversion Rates */}
+      {journeys.length > 0 && (
+        <AnimatedSection delay={0.3}>
+          <ConversionCards total={convTotal} byOffice={convByOffice} />
+        </AnimatedSection>
+      )}
+
+      {/* v2: Quality Metrics */}
+      {journeys.length > 0 && (
+        <AnimatedSection delay={0.35}>
+          <QualityCards total={qualityTotal} byOffice={qualityByOffice} />
+        </AnimatedSection>
+      )}
+
       {/* Funnel + Office Comparison */}
-      <AnimatedSection delay={0.35}>
+      <AnimatedSection delay={0.4}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <SalesFunnel steps={funnel} />
           <OfficeComparison offices={offices} />
@@ -114,7 +138,7 @@ export function Overview({ period }: Props) {
       </AnimatedSection>
 
       {/* Trend Chart */}
-      <AnimatedSection delay={0.45}>
+      <AnimatedSection delay={0.5}>
         <TrendChart data={trendData} isLoading={trendLoading} />
       </AnimatedSection>
     </div>
