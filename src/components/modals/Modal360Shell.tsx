@@ -3,6 +3,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useModal360 } from '../../contexts/Modal360Context';
 import { Agent360Content } from './Agent360Content';
 import { Property360Content } from './Property360Content';
+import { Office360Content } from './Office360Content';
+import { Team360Content } from './Team360Content';
 
 export function Modal360Shell() {
   const { isOpen, current, stack, close, goBack, navPrev, navNext } = useModal360();
@@ -31,74 +33,107 @@ export function Modal360Shell() {
   return (
     <AnimatePresence>
       {isOpen && current && (
-        <motion.div
-          key="modal360-backdrop"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          onClick={(e) => { if (e.target === e.currentTarget) close(); }}
-        >
-          {/* Prev arrow */}
-          {navPrev && (
-            <button
-              onClick={navPrev}
-              className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/90 shadow-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-white transition-colors"
-              title="Προηγούμενο"
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12 15l-5-5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            </button>
-          )}
-
-          {/* Next arrow */}
-          {navNext && (
-            <button
-              onClick={navNext}
-              className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/90 shadow-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-white transition-colors"
-              title="Επόμενο"
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M8 5l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            </button>
-          )}
-
+        <>
+          {/* Backdrop overlay */}
           <motion.div
-            key={modalKey}
-            className="card-premium max-w-3xl w-full max-h-[90vh] overflow-y-auto relative"
-            initial={{ opacity: 0, y: 40, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 40, scale: 0.95 }}
-            transition={{ duration: 0.25, ease: 'easeOut' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Back button when stack > 1 */}
-            {stack.length > 1 && (
-              <button
-                onClick={goBack}
-                className="absolute top-3 left-3 z-10 text-sm text-text-muted hover:text-text-primary flex items-center gap-1"
-              >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12l-4-4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                Back
-              </button>
-            )}
+            key="modal360-backdrop"
+            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={close}
+          />
 
-            {/* Content based on entity type */}
-            {current.type === 'agent' && <Agent360Content agentId={current.id as number} />}
-            {current.type === 'property' && <Property360Content propertyId={current.id as string} />}
-            {current.type === 'office' && (
-              <div className="p-6 text-center text-text-muted">
-                <h3 className="text-lg font-semibold text-text-primary mb-2">Office 360: {current.label}</h3>
-                <p className="text-sm">Office detail view will be built in Cycle I.</p>
+          {/* Slide-in right panel */}
+          <motion.div
+            key="modal360-panel"
+            className="fixed top-0 right-0 z-50 h-full w-full max-w-[480px] bg-surface-card shadow-2xl border-l border-border-default flex flex-col"
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+          >
+            {/* Panel header bar */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border-default bg-surface-elevated shrink-0">
+              <div className="flex items-center gap-2">
+                {/* Back button */}
+                {stack.length > 1 && (
+                  <button
+                    onClick={goBack}
+                    className="text-text-muted hover:text-text-primary flex items-center gap-1 text-sm"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12l-4-4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    Back
+                  </button>
+                )}
+
+                {/* Breadcrumb */}
+                <div className="flex items-center gap-1 text-xs text-text-muted">
+                  {stack.length > 1 && stack.slice(0, -1).map((ref, i) => (
+                    <span key={i} className="flex items-center gap-1">
+                      <button
+                        onClick={() => {
+                          // Navigate back to this point in the stack
+                          for (let j = stack.length - 1; j > i; j--) goBack();
+                        }}
+                        className="hover:text-brand-blue"
+                      >
+                        {ref.label}
+                      </button>
+                      <span className="text-border-default">/</span>
+                    </span>
+                  ))}
+                </div>
               </div>
-            )}
-            {current.type === 'team' && (
-              <div className="p-6 text-center text-text-muted">
-                <h3 className="text-lg font-semibold text-text-primary mb-2">Team 360: {current.label}</h3>
-                <p className="text-sm">Team detail view will be built in Cycle I.</p>
+
+              <div className="flex items-center gap-1">
+                {/* Prev/Next navigation */}
+                {navPrev && (
+                  <button
+                    onClick={navPrev}
+                    className="w-7 h-7 rounded-md hover:bg-surface-light flex items-center justify-center text-text-muted hover:text-text-primary transition-colors"
+                    title="Previous"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12l-4-4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
+                )}
+                {navNext && (
+                  <button
+                    onClick={navNext}
+                    className="w-7 h-7 rounded-md hover:bg-surface-light flex items-center justify-center text-text-muted hover:text-text-primary transition-colors"
+                    title="Next"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
+                )}
+
+                {/* Close */}
+                <button
+                  onClick={close}
+                  className="w-7 h-7 rounded-md hover:bg-surface-light flex items-center justify-center text-text-muted hover:text-text-primary transition-colors ml-1"
+                  title="Close (Esc)"
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M12 4L4 12M4 4l8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                </button>
               </div>
-            )}
+            </div>
+
+            {/* Scrollable content */}
+            <motion.div
+              key={modalKey}
+              className="flex-1 overflow-y-auto"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.15, delay: 0.05 }}
+            >
+              {current.type === 'agent' && <Agent360Content agentId={current.id as number} />}
+              {current.type === 'property' && <Property360Content propertyId={current.id as string} />}
+              {current.type === 'office' && <Office360Content office={current.id as string} />}
+              {current.type === 'team' && <Team360Content teamId={current.id as number} teamLabel={current.label} />}
+            </motion.div>
           </motion.div>
-        </motion.div>
+        </>
       )}
     </AnimatePresence>
   );
