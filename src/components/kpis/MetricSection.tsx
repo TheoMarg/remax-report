@@ -81,7 +81,7 @@ export function MetricSection({ def, metrics, teams, teamMembers, period }: Prop
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <MetricHeader
         def={def}
         crm={crm}
@@ -92,19 +92,19 @@ export function MetricSection({ def, metrics, teams, teamMembers, period }: Prop
         companyAvg={companyAvg}
       />
 
-      <div className="card-premium p-4">
-        <div className="flex flex-wrap gap-1 mb-4">
+      <div className="card-premium p-5">
+        <div className="flex flex-wrap gap-1.5 mb-5 pb-4 border-b border-border-subtle">
           {tabLabels.map((label, i) => {
             const isFourClub = label === FOUR_CLUB_TAB;
             return (
               <button
                 key={label}
                 onClick={() => setActiveTab(i)}
-                className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                className={`px-3.5 py-2 text-xs rounded-lg transition-all duration-200 ${
                   isFourClub ? 'font-bold' : 'font-medium'
                 } ${
                   activeTab === i
-                    ? 'bg-navy text-white shadow-sm'
+                    ? 'bg-navy text-white shadow-md'
                     : isFourClub
                     ? 'text-text-primary bg-brand-green/10 hover:bg-brand-green/20'
                     : 'text-text-muted hover:bg-surface hover:text-text-primary'

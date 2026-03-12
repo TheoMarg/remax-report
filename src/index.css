@@ -2,56 +2,64 @@
 
 @theme {
   --color-navy: #0C1E3C;
+  --color-navy-light: #162D54;
   --color-brand-blue: #1B5299;
+  --color-brand-teal: #168F80;
   --color-brand-gold: #C9961A;
   --color-brand-orange: #D4722A;
   --color-brand-green: #1D7A4E;
-  --color-brand-red: #DC3545;
-  --color-brand-teal: #168F80;
   --color-brand-purple: #6B5CA5;
-
+  --color-brand-red: #DC3545;
   --color-surface: #F7F6F3;
   --color-surface-card: #FFFFFF;
+  --color-surface-elevated: #FAFAF8;
   --color-surface-light: #EFECEA;
-
-  --color-text-primary: #0C1E3C;
-  --color-text-secondary: #3A4550;
-  --color-text-muted: #8A94A0;
-
   --color-border-default: #DDD8D0;
-  --color-border-subtle: #F0EEEB;
+  --color-border-subtle: #EFECEA;
+  --color-text-primary: #0C1E3C;
+  --color-text-secondary: #4A5568;
+  --color-text-muted: #8A94A0;
 }
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
 }
 
 /* ── Utility classes ── */
 
+/* Premium card styling */
 .card-premium {
-  @apply bg-surface-card rounded-xl border border-border-default shadow-sm
-         hover:shadow-md transition-shadow duration-200;
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border-default);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(12, 30, 60, 0.04), 0 1px 2px rgba(12, 30, 60, 0.02);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
+.card-premium:hover {
+  box-shadow: 0 4px 12px rgba(12, 30, 60, 0.08), 0 2px 4px rgba(12, 30, 60, 0.04);
+}
+
+/* Hero gradient background */
 .hero-gradient {
-  background: linear-gradient(135deg, #0C1E3C 0%, #1B5299 60%, #168F80 100%);
+  background: linear-gradient(135deg, #0C1E3C 0%, #1B5299 50%, #168F80 100%);
 }
 
+/* Subtle shimmer for gold accents */
 .gold-shimmer {
-  background: linear-gradient(90deg, #C9961A, #E2B93B, #C9961A);
-  background-size: 200% auto;
+  background: linear-gradient(135deg, #C9961A, #E0B84A, #C9961A);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: shimmer 3s linear infinite;
+  background-clip: text;
 }
 
-@keyframes shimmer {
-  to { background-position: 200% center; }
-}
-
+/* Smooth number transitions */
 .stat-number {
-  @apply text-3xl font-bold tracking-tight tabular-nums;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
 }

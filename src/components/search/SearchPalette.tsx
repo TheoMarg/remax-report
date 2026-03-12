@@ -22,7 +22,7 @@ export function SearchPalette() {
   const [properties, setProperties] = useState<PropertyResult[]>([]);
   const [loadingProps, setLoadingProps] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const { data: agents = [] } = useAgents();
   const { openAgent, openProperty } = useModal360();

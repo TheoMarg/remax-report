@@ -27,6 +27,10 @@ dist-ssr
 *.sln
 *.sw?
 
+# Python
+__pycache__/
+*.pyc
+
 # Temp files
 ~$*
 supabase/.temp/

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import type { Agent, CombinedMetric, PropertyDetail } from '../lib/types';
+import type { Agent, CombinedMetric } from '../lib/types';
 
 export function useAgentDetail(agentId: number | null) {
   const enabled = agentId !== null;

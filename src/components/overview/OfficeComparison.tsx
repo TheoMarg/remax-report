@@ -18,12 +18,12 @@ function StatRow({ label, values, format = 'number' }: StatRowProps) {
 
   const max = Math.max(...values);
   return (
-    <div className="flex items-center text-xs py-1.5 border-b border-surface last:border-0">
-      <div className="w-[120px] text-text-muted shrink-0">{label}</div>
+    <div className="flex items-center text-xs py-2 border-b border-border-subtle last:border-0 hover:bg-surface/50 transition-colors rounded">
+      <div className="w-[120px] text-text-muted shrink-0 pl-2">{label}</div>
       {values.map((v, i) => (
         <div
           key={i}
-          className={`flex-1 text-center font-medium ${
+          className={`flex-1 text-center font-medium stat-number ${
             v === max && values.filter(x => x === max).length === 1
               ? 'text-brand-green font-bold'
               : 'text-text-primary'
@@ -55,7 +55,7 @@ export function OfficeComparison({ offices }: Props) {
   if (sorted.length < 2) {
     return (
       <div className="card-premium p-5">
-        <h3 className="text-sm font-semibold text-text-primary mb-2">Γραφείο vs Γραφείο</h3>
+        <h3 className="text-sm font-bold text-text-primary mb-2">Γραφείο vs Γραφείο</h3>
         <p className="text-sm text-text-muted">Χρειάζονται δεδομένα από 2+ γραφεία</p>
       </div>
     );
@@ -66,13 +66,17 @@ export function OfficeComparison({ offices }: Props) {
 
   return (
     <div className="card-premium p-5">
-      <h3 className="text-sm font-semibold text-text-primary mb-4">Γραφείο vs Γραφείο</h3>
-      <div className="flex items-center mb-3">
+      <div className="flex items-center gap-2 mb-5">
+        <div className="w-7 h-7 rounded-lg bg-brand-teal/10 flex items-center justify-center text-sm">🏢</div>
+        <h3 className="text-sm font-bold text-text-primary">Γραφείο vs Γραφείο</h3>
+      </div>
+      {/* Office headers */}
+      <div className="flex items-center mb-4 pb-3 border-b border-border-default">
         <div className="w-[120px]" />
         {[o1, o2].map((o, i) => (
           <div key={i} className="flex-1 text-center">
             <div className="text-sm font-bold text-text-primary">{officeName(o.office)}</div>
-            <div className="text-[10px] text-text-muted">{o.agents} συνεργάτες</div>
+            <div className="text-[10px] text-text-muted mt-0.5">{o.agents} συνεργάτες</div>
           </div>
         ))}
       </div>
@@ -83,8 +87,8 @@ export function OfficeComparison({ offices }: Props) {
       <StatRow label="Κλεισίματα" values={[o1.closings, o2.closings]} />
       <StatRow label="Συμβολαιοπ." values={[o1.billing, o2.billing]} />
       <StatRow label="Τζίρος" values={[o1.gci, o2.gci]} format="currency" />
-      <div className="mt-3 pt-3 border-t border-border-default">
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-2">
+      <div className="mt-4 pt-3 border-t border-border-default">
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-2 pl-2">
           Μέσος όρος ανά συνεργάτη/μήνα
         </div>
         <StatRow label="Καταγραφές" values={[o1.agents > 0 ? Math.round(o1.registrations / o1.agents) : 0, o2.agents > 0 ? Math.round(o2.registrations / o2.agents) : 0]} />

@@ -23,7 +23,7 @@ export function Footer() {
     : null;
 
   return (
-    <footer className="bg-surface-card border-t border-border-default px-6 py-2 text-xs text-text-muted flex justify-between">
+    <footer className="bg-surface-card border-t border-border-default px-6 py-2.5 text-xs text-text-muted flex justify-between max-w-[1600px] mx-auto w-full">
       <span>
         Τελευταίος συγχρονισμός: {syncDate ?? 'Μη διαθέσιμο'}
       </span>

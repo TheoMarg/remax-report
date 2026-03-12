@@ -5,8 +5,7 @@ import { Agent360Content } from './Agent360Content';
 import { Property360Content } from './Property360Content';
 
 export function Modal360Shell() {
-  const { state, close, navPrev, navNext } = useModal360();
-  const isOpen = state.type !== 'closed';
+  const { isOpen, current, stack, close, goBack, navPrev, navNext } = useModal360();
 
   // ESC to close, arrow keys to navigate, body scroll lock
   useEffect(() => {
@@ -16,6 +15,7 @@ export function Modal360Shell() {
       if (e.key === 'Escape') close();
       if (e.key === 'ArrowLeft' && navPrev) { e.preventDefault(); navPrev(); }
       if (e.key === 'ArrowRight' && navNext) { e.preventDefault(); navNext(); }
+      if (e.key === 'Backspace' && stack.length > 1) { e.preventDefault(); goBack(); }
     };
     document.addEventListener('keydown', onKey);
     document.body.style.overflow = 'hidden';
@@ -24,11 +24,13 @@ export function Modal360Shell() {
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = '';
     };
-  }, [isOpen, close, navPrev, navNext]);
+  }, [isOpen, close, goBack, navPrev, navNext, stack.length]);
+
+  const modalKey = current ? `${current.type}-${current.id}` : 'closed';
 
   return (
     <AnimatePresence>
-      {isOpen && (
+      {isOpen && current && (
         <motion.div
           key="modal360-backdrop"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
@@ -61,7 +63,7 @@ export function Modal360Shell() {
           )}
 
           <motion.div
-            key={state.type === 'agent' ? `agent-${state.agentId}` : state.type === 'property' ? `prop-${state.propertyId}` : 'closed'}
+            key={modalKey}
             className="card-premium max-w-3xl w-full max-h-[90vh] overflow-y-auto relative"
             initial={{ opacity: 0, y: 40, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -69,8 +71,32 @@ export function Modal360Shell() {
             transition={{ duration: 0.25, ease: 'easeOut' }}
             onClick={(e) => e.stopPropagation()}
           >
-            {state.type === 'agent' && <Agent360Content agentId={state.agentId} />}
-            {state.type === 'property' && <Property360Content propertyId={state.propertyId} />}
+            {/* Back button when stack > 1 */}
+            {stack.length > 1 && (
+              <button
+                onClick={goBack}
+                className="absolute top-3 left-3 z-10 text-sm text-text-muted hover:text-text-primary flex items-center gap-1"
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12l-4-4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                Back
+              </button>
+            )}
+
+            {/* Content based on entity type */}
+            {current.type === 'agent' && <Agent360Content agentId={current.id as number} />}
+            {current.type === 'property' && <Property360Content propertyId={current.id as string} />}
+            {current.type === 'office' && (
+              <div className="p-6 text-center text-text-muted">
+                <h3 className="text-lg font-semibold text-text-primary mb-2">Office 360: {current.label}</h3>
+                <p className="text-sm">Office detail view will be built in Cycle I.</p>
+              </div>
+            )}
+            {current.type === 'team' && (
+              <div className="p-6 text-center text-text-muted">
+                <h3 className="text-lg font-semibold text-text-primary mb-2">Team 360: {current.label}</h3>
+                <p className="text-sm">Team detail view will be built in Cycle I.</p>
+              </div>
+            )}
           </motion.div>
         </motion.div>
       )}

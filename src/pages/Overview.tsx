@@ -60,43 +60,61 @@ export function Overview({ period }: Props) {
 
   return (
     <div id="page-overview" className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1600px] mx-auto">
-      {/* Hero header */}
+      {/* Hero Header */}
       <motion.div
-        initial={{ opacity: 0, y: -10 }}
+        initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
         className="hero-gradient rounded-2xl p-6 sm:p-8 text-white relative overflow-hidden"
       >
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
-        <div className="relative z-10 flex flex-wrap items-start justify-between gap-4">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/3 translate-x-1/3" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/4" />
+
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
-            <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-white/60 bg-white/10 px-2.5 py-1 rounded-full mb-3">
-              ΣΥΝΟΨΗ
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-bold">{period.label}</h2>
-            <p className="text-white/60 text-sm mt-1">{totalAgents} συνεργατες</p>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-white/15 text-white/80 backdrop-blur-sm">
+                📊 ΑΝΑΦΟΡΑ BROKER
+              </span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight">
+              Συνοψη
+            </h2>
+            <p className="text-lg sm:text-xl font-light text-white/80 mt-1">
+              {period.label}
+            </p>
           </div>
-          <ExportPdfButton elementId="page-overview" filename={`synopsi-${period.label}.pdf`} />
+
+          <div className="flex items-center gap-3">
+            <ExportPdfButton elementId="page-overview" filename={`Συνοψη_${period.label}.pdf`} />
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl px-5 py-3 border border-white/10">
+              <div className="text-3xl font-bold stat-number">{totalAgents}</div>
+              <div className="text-[11px] text-white/60 font-medium uppercase tracking-wider">ΣΥΝΕΡΓΑΤΕΣ</div>
+            </div>
+          </div>
         </div>
       </motion.div>
 
-      <AnimatedSection delay={0.1}>
+      {/* Top Performers */}
+      <AnimatedSection delay={0.15}>
         <TopPerformers topAgentLarissa={topAgentLarissa} topAgentKaterini={topAgentKaterini} topTeam={topTeam} />
       </AnimatedSection>
 
-      <AnimatedSection delay={0.2}>
+      {/* KPI Cards */}
+      <AnimatedSection delay={0.25}>
         <KpiCards kpis={kpis} />
       </AnimatedSection>
 
-      <AnimatedSection delay={0.3}>
+      {/* Funnel + Office Comparison */}
+      <AnimatedSection delay={0.35}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <SalesFunnel steps={funnel} />
           <OfficeComparison offices={offices} />
         </div>
       </AnimatedSection>
 
-      <AnimatedSection delay={0.4}>
+      {/* Trend Chart */}
+      <AnimatedSection delay={0.45}>
         <TrendChart data={trendData} isLoading={trendLoading} />
       </AnimatedSection>
     </div>
