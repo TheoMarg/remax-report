@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useAgents } from '../../hooks/useAgents';
 import { useMetrics } from '../../hooks/useMetrics';
 import { usePropertyJourneys } from '../../hooks/usePropertyJourneys';
@@ -6,7 +7,7 @@ import { usePipelineValue } from '../../hooks/usePipelineValue';
 import { useStuckAlerts } from '../../hooks/useStuckAlerts';
 import { useKpiWeights } from '../../hooks/useKpiWeights';
 import { usePqsWeights } from '../../hooks/usePqsWeights';
-import { usePeriod } from '../../hooks/usePeriod';
+import type { Period } from '../../lib/types';
 import { useConversionRates } from '../../hooks/useConversionRates';
 import { useQualityMetrics } from '../../hooks/useQualityMetrics';
 import { useWeightedScores } from '../../hooks/useWeightedScores';
@@ -34,10 +35,18 @@ interface Props {
 }
 
 export function Office360Content({ office }: Props) {
-  const { period } = usePeriod();
+  // YTD period for journeys & comparisons (full current year)
+  const currentYearStr = new Date().getFullYear().toString();
+  const ytdPeriod = useMemo<Period>(() => ({
+    type: 'year',
+    start: `${currentYearStr}-01-01`,
+    end: `${currentYearStr}-12-31`,
+    label: `YTD ${currentYearStr}`,
+  }), [currentYearStr]);
+
   const { data: agents = [] } = useAgents();
-  const { data: allMetrics = [] } = useMetrics(period);
-  const { data: journeys = [] } = usePropertyJourneys(period);
+  const { data: allMetrics = [] } = useMetrics(ytdPeriod);
+  const { data: journeys = [] } = usePropertyJourneys(ytdPeriod);
   const { data: qualityData = [] } = usePortfolioQuality();
   const { data: pipelineData = [] } = usePipelineValue();
   const { data: stuckAlerts = [] } = useStuckAlerts();
@@ -72,6 +81,32 @@ export function Office360Content({ office }: Props) {
   const { total: officeQuality } = useQualityMetrics(officeJourneys);
   const { total: companyQuality } = useQualityMetrics(journeys);
 
+  // Company-wide per-agent averages for comparison
+  const kpiComparisons = useMemo(() => {
+    const allIndividuals = allMetrics.filter(m => !m.is_team && m.period_start.startsWith(currentYear));
+    const fields = [
+      { key: 'gci', field: 'gci' },
+      { key: 'closings', field: 'crm_closings' },
+      { key: 'registrations', field: 'crm_registrations' },
+      { key: 'exclusives', field: 'crm_exclusives' },
+      { key: 'showings', field: 'crm_showings' },
+      { key: 'offers', field: 'crm_offers' },
+    ] as const;
+    const result: Record<string, { companyAvg: number }> = {};
+    for (const { key, field } of fields) {
+      const agentMap = new Map<number, number>();
+      for (const m of allIndividuals) {
+        const val = Number(m[field as keyof typeof m]) || 0;
+        agentMap.set(m.agent_id, (agentMap.get(m.agent_id) || 0) + val);
+      }
+      const vals = Array.from(agentMap.values());
+      result[key] = {
+        companyAvg: vals.length > 0 ? vals.reduce((s, v) => s + v, 0) / vals.length : 0,
+      };
+    }
+    return result;
+  }, [allMetrics, currentYear]);
+
   // Stuck alerts
   const officeStuck = stuckAlerts.filter(a => a.office === office);
 
@@ -98,18 +133,35 @@ export function Office360Content({ office }: Props) {
       {/* ── YTD KPIs ── */}
       <div className="grid grid-cols-3 gap-2">
         {[
-          { label: 'GCI (Τζίρος)', value: fmtEur(ytdGci), color: '#C9961A' },
-          { label: 'Closings (Κλεισ.)', value: fmt(ytdClosings), color: '#D4722A' },
-          { label: 'Registrations (Καταγρ.)', value: fmt(ytdRegistrations), color: '#1B5299' },
-          { label: 'Exclusives (Αποκλ.)', value: fmt(ytdExclusives), color: '#168F80' },
-          { label: 'Showings (Υποδ.)', value: fmt(ytdShowings), color: '#6B5CA5' },
-          { label: 'Offers (Προσφ.)', value: fmt(ytdOffers), color: '#C9961A' },
-        ].map(kpi => (
-          <div key={kpi.label} className="bg-surface rounded-lg p-2.5 text-center border border-border-subtle">
-            <div className="text-[9px] font-semibold uppercase tracking-wider text-text-muted">{kpi.label}</div>
-            <div className="text-base font-bold mt-0.5" style={{ color: kpi.color }}>{kpi.value}</div>
-          </div>
-        ))}
+          { label: 'GCI (Τζίρος)', value: fmtEur(ytdGci), raw: ytdGci, key: 'gci', color: '#C9961A', isEur: true },
+          { label: 'Closings (Κλεισ.)', value: fmt(ytdClosings), raw: ytdClosings, key: 'closings', color: '#D4722A', isEur: false },
+          { label: 'Registrations (Καταγρ.)', value: fmt(ytdRegistrations), raw: ytdRegistrations, key: 'registrations', color: '#1B5299', isEur: false },
+          { label: 'Exclusives (Αποκλ.)', value: fmt(ytdExclusives), raw: ytdExclusives, key: 'exclusives', color: '#168F80', isEur: false },
+          { label: 'Showings (Υποδ.)', value: fmt(ytdShowings), raw: ytdShowings, key: 'showings', color: '#6B5CA5', isEur: false },
+          { label: 'Offers (Προσφ.)', value: fmt(ytdOffers), raw: ytdOffers, key: 'offers', color: '#C9961A', isEur: false },
+        ].map(kpi => {
+          const comp = kpiComparisons[kpi.key];
+          const perAgentAvg = officeAgents.length > 0 ? kpi.raw / officeAgents.length : 0;
+          const valueColor = comp && perAgentAvg > comp.companyAvg ? '#1D7A4E'
+            : comp && perAgentAvg < comp.companyAvg * 0.7 ? '#C9372C'
+            : kpi.color;
+          return (
+            <div key={kpi.label} className="bg-surface rounded-lg p-2.5 text-center border border-border-subtle">
+              <div className="text-[9px] font-semibold uppercase tracking-wider text-text-muted">{kpi.label}</div>
+              <div className="text-base font-bold mt-0.5" style={{ color: valueColor }}>{kpi.value}</div>
+              {comp && comp.companyAvg > 0 && (
+                <div className="mt-1 space-y-0.5">
+                  <div className="text-[8px] text-text-muted">
+                    Μ.Ο./Σύμβ: <span className="font-semibold text-text-secondary">{kpi.isEur ? fmtEur(Math.round(perAgentAvg)) : (perAgentAvg).toFixed(1)}</span>
+                  </div>
+                  <div className="text-[8px] text-text-muted">
+                    Μ.Ο. Εταιρ: <span className="font-semibold text-text-secondary">{kpi.isEur ? fmtEur(Math.round(comp.companyAvg)) : comp.companyAvg.toFixed(1)}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* ── Pipeline summary ── */}
@@ -130,7 +182,7 @@ export function Office360Content({ office }: Props) {
       {/* ── Conversion Rates ── */}
       {officeJourneys.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-text-primary mb-2">Conversion Rates (Ποσοστά Μετατροπής) — {period.label}</h3>
+          <h3 className="text-sm font-semibold text-text-primary mb-2">Conversion Rates (Ποσοστά Μετατροπής) — {ytdPeriod.label}</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>

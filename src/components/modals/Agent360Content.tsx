@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useAgentDetail } from '../../hooks/useAgentDetail';
 import { usePropertyJourneys } from '../../hooks/usePropertyJourneys';
 import { usePortfolioQuality } from '../../hooks/usePortfolioQuality';
@@ -5,7 +6,7 @@ import { useKpiWeights } from '../../hooks/useKpiWeights';
 import { usePqsWeights } from '../../hooks/usePqsWeights';
 import { useMetrics } from '../../hooks/useMetrics';
 import { useStuckAlerts } from '../../hooks/useStuckAlerts';
-import { usePeriod } from '../../hooks/usePeriod';
+import type { Period } from '../../lib/types';
 import { useConversionRates } from '../../hooks/useConversionRates';
 import { useQualityMetrics } from '../../hooks/useQualityMetrics';
 import { useWeightedScores } from '../../hooks/useWeightedScores';
@@ -14,6 +15,8 @@ import { PropertyLink } from '../ui/PropertyLink';
 import { EntityLink } from '../shared/EntityLink';
 import { StatusBadge } from '../shared/StatusBadge';
 import { TrendSparkline } from '../shared/TrendSparkline';
+import { useAgentTargets } from '../../hooks/useAgentTargets';
+import { usePacing } from '../../hooks/usePacing';
 import { formatDateEL } from '../../lib/propertyMetrics';
 
 const OFFICE_LABEL: Record<string, string> = {
@@ -47,11 +50,18 @@ interface Props {
 
 export function Agent360Content({ agentId }: Props) {
   const { profile, metrics, closings, portfolio, showingsCount, targets, withdrawals, isLoading } = useAgentDetail(agentId);
-  const { period } = usePeriod();
+  // YTD period for journeys & comparisons (full current year)
+  const currentYearStr = new Date().getFullYear().toString();
+  const ytdPeriod = useMemo<Period>(() => ({
+    type: 'year',
+    start: `${currentYearStr}-01-01`,
+    end: `${currentYearStr}-12-31`,
+    label: `YTD ${currentYearStr}`,
+  }), [currentYearStr]);
 
   // v2 data
-  const { data: allMetrics = [] } = useMetrics(period);
-  const { data: journeys = [] } = usePropertyJourneys(period);
+  const { data: allMetrics = [] } = useMetrics(ytdPeriod);
+  const { data: journeys = [] } = usePropertyJourneys(ytdPeriod);
   const { data: qualityData = [] } = usePortfolioQuality();
   const { data: kpiWeights = [] } = useKpiWeights();
   const { data: pqsWeights = [] } = usePqsWeights();
@@ -125,6 +135,56 @@ export function Agent360Content({ agentId }: Props) {
   // Quality metrics
   const { total: agentQuality } = useQualityMetrics(agentJourneys);
   const { total: companyQuality } = useQualityMetrics(journeys);
+  const { total: officeQuality } = useQualityMetrics(officeJourneys);
+
+  // Target pacing
+  const currentYearNum = new Date().getFullYear();
+  const { data: allTargets } = useAgentTargets(currentYearNum);
+  const allPacing = usePacing(allMetrics, allTargets);
+  const agentPacing = useMemo(() => {
+    const found = allPacing.find(p => p.agent_id === agentId);
+    return found?.metrics ?? [];
+  }, [allPacing, agentId]);
+  const idealPctLabel = useMemo(() => {
+    const now = new Date();
+    const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000);
+    return Math.round((dayOfYear / 365) * 100);
+  }, []);
+
+  // KPI comparisons: office avg + company avg (excluding self)
+  const kpiComparisons = useMemo(() => {
+    if (allMetrics.length === 0) return null;
+    const individuals = allMetrics.filter(m => !m.is_team && m.period_start.startsWith(currentYear));
+    const agentOffice = agent?.office;
+    const fields = [
+      { key: 'gci', field: 'gci' },
+      { key: 'closings', field: 'crm_closings' },
+      { key: 'registrations', field: 'crm_registrations' },
+      { key: 'exclusives', field: 'crm_exclusives' },
+      { key: 'showings', field: 'crm_showings' },
+      { key: 'offers', field: 'crm_offers' },
+    ] as const;
+    const result: Record<string, { officeAvg: number; companyAvg: number }> = {};
+    for (const { key, field } of fields) {
+      const officeMap = new Map<number, number>();
+      const companyMap = new Map<number, number>();
+      for (const m of individuals) {
+        if (m.agent_id === agentId) continue;
+        const val = Number(m[field as keyof typeof m]) || 0;
+        companyMap.set(m.agent_id, (companyMap.get(m.agent_id) || 0) + val);
+        if (agentOffice && m.office === agentOffice) {
+          officeMap.set(m.agent_id, (officeMap.get(m.agent_id) || 0) + val);
+        }
+      }
+      const officeVals = Array.from(officeMap.values());
+      const companyVals = Array.from(companyMap.values());
+      result[key] = {
+        officeAvg: officeVals.length > 0 ? officeVals.reduce((s, v) => s + v, 0) / officeVals.length : 0,
+        companyAvg: companyVals.length > 0 ? companyVals.reduce((s, v) => s + v, 0) / companyVals.length : 0,
+      };
+    }
+    return result;
+  }, [allMetrics, agentId, agent?.office, currentYear]);
 
   // Stuck alerts for this agent
   const myStuckAlerts = stuckAlerts.filter(a => a.agent_id === agentId);
@@ -232,21 +292,86 @@ export function Agent360Content({ agentId }: Props) {
         </div>
       )}
 
+      {/* ── Target Pacing ── */}
+      {agentPacing.length > 0 && (
+        <div className="bg-surface rounded-lg p-3 border border-border-subtle">
+          <div className="text-[9px] font-semibold uppercase tracking-wider text-text-muted mb-2">
+            Target Pacing (Πορεία Στόχων) — {idealPctLabel}% of year
+          </div>
+          <div className="space-y-1.5">
+            {agentPacing.map(p => {
+              const actualPct = p.target > 0 ? (p.actual / p.target) * 100 : 0;
+              const idealPct = p.target > 0 ? (p.ideal / p.target) * 100 : 0;
+              return (
+                <div key={p.metric} className="flex items-center gap-2">
+                  <span className="text-[10px] text-text-muted w-16 shrink-0 truncate">{p.metric}</span>
+                  <div className="flex-1 h-2 bg-surface-light rounded-full overflow-hidden relative">
+                    <div
+                      className="absolute top-0 h-full w-px bg-text-muted/40"
+                      style={{ left: `${Math.min(idealPct, 100)}%` }}
+                    />
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        p.status === 'ahead' ? 'bg-brand-green' :
+                        p.status === 'on_track' ? 'bg-brand-blue' :
+                        p.status === 'behind' ? 'bg-brand-gold' :
+                        'bg-brand-red'
+                      }`}
+                      style={{ width: `${Math.min(actualPct, 100)}%` }}
+                    />
+                  </div>
+                  <span className={`text-[10px] font-bold tabular-nums w-10 text-right ${
+                    p.status === 'ahead' ? 'text-brand-green' :
+                    p.status === 'on_track' ? 'text-brand-blue' :
+                    p.status === 'behind' ? 'text-brand-gold' :
+                    'text-brand-red'
+                  }`}>
+                    {Math.round(actualPct)}%
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ── YTD KPI summary ── */}
       <div className="grid grid-cols-3 gap-2">
         {[
-          { label: 'GCI (Τζίρος)', value: fmtEur(ytdGci), color: '#C9961A' },
-          { label: 'Closings (Κλεισ.)', value: fmt(ytdClosings), color: '#D4722A' },
-          { label: 'Registrations (Καταγρ.)', value: fmt(ytdRegistrations), color: '#1B5299' },
-          { label: 'Exclusives (Αποκλ.)', value: fmt(ytdExclusives), color: '#168F80' },
-          { label: 'Showings (Υποδ.)', value: fmt(ytdShowings), color: '#6B5CA5' },
-          { label: 'Offers (Προσφ.)', value: fmt(ytdOffers), color: '#C9961A' },
-        ].map(kpi => (
-          <div key={kpi.label} className="bg-surface rounded-lg p-2.5 text-center border border-border-subtle">
-            <div className="text-[9px] font-semibold uppercase tracking-wider text-text-muted">{kpi.label}</div>
-            <div className="text-base font-bold mt-0.5" style={{ color: kpi.color }}>{kpi.value}</div>
-          </div>
-        ))}
+          { label: 'GCI (Τζίρος)', value: fmtEur(ytdGci), raw: ytdGci, key: 'gci', color: '#C9961A', isEur: true },
+          { label: 'Closings (Κλεισ.)', value: fmt(ytdClosings), raw: ytdClosings, key: 'closings', color: '#D4722A', isEur: false },
+          { label: 'Registrations (Καταγρ.)', value: fmt(ytdRegistrations), raw: ytdRegistrations, key: 'registrations', color: '#1B5299', isEur: false },
+          { label: 'Exclusives (Αποκλ.)', value: fmt(ytdExclusives), raw: ytdExclusives, key: 'exclusives', color: '#168F80', isEur: false },
+          { label: 'Showings (Υποδ.)', value: fmt(ytdShowings), raw: ytdShowings, key: 'showings', color: '#6B5CA5', isEur: false },
+          { label: 'Offers (Προσφ.)', value: fmt(ytdOffers), raw: ytdOffers, key: 'offers', color: '#C9961A', isEur: false },
+        ].map(kpi => {
+          const comp = kpiComparisons?.[kpi.key];
+          const valueColor = comp
+            ? kpi.raw > comp.companyAvg ? '#1D7A4E'
+              : kpi.raw < comp.companyAvg * 0.7 ? '#C9372C'
+              : kpi.color
+            : kpi.color;
+          return (
+            <div key={kpi.label} className="bg-surface rounded-lg p-2.5 text-center border border-border-subtle">
+              <div className="text-[9px] font-semibold uppercase tracking-wider text-text-muted">{kpi.label}</div>
+              <div className="text-base font-bold mt-0.5" style={{ color: valueColor }}>{kpi.value}</div>
+              {comp && (comp.officeAvg > 0 || comp.companyAvg > 0) && (
+                <div className="mt-1 space-y-0.5">
+                  {comp.officeAvg > 0 && (
+                    <div className="text-[8px] text-text-muted">
+                      Μ.Ο. Γραφ: <span className="font-semibold text-text-secondary">{kpi.isEur ? fmtEur(Math.round(comp.officeAvg)) : comp.officeAvg.toFixed(1)}</span>
+                    </div>
+                  )}
+                  {comp.companyAvg > 0 && (
+                    <div className="text-[8px] text-text-muted">
+                      Μ.Ο. Εταιρ: <span className="font-semibold text-text-secondary">{kpi.isEur ? fmtEur(Math.round(comp.companyAvg)) : comp.companyAvg.toFixed(1)}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* GCI Trend sparkline */}
@@ -260,7 +385,7 @@ export function Agent360Content({ agentId }: Props) {
       {/* ── Conversion Rates ── */}
       {agentJourneys.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-text-primary mb-2">Conversion Rates (Ποσοστά Μετατροπής) — {period.label}</h3>
+          <h3 className="text-sm font-semibold text-text-primary mb-2">Conversion Rates (Ποσοστά Μετατροπής) — {ytdPeriod.label}</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
@@ -305,21 +430,29 @@ export function Agent360Content({ agentId }: Props) {
                 <tr className="text-text-muted border-b border-border-default">
                   <th className="text-left pb-1.5 pr-2 font-medium">Metric</th>
                   <th className="text-right pb-1.5 px-2 font-medium text-brand-blue">Agent</th>
+                  <th className="text-right pb-1.5 px-2 font-medium text-brand-gold">Office</th>
                   <th className="text-right pb-1.5 pl-2 font-medium text-text-secondary">Company</th>
                 </tr>
               </thead>
               <tbody>
                 {[
-                  { label: 'Avg Reg → Excl', a: agentQuality.avg_days_reg_to_excl, c: companyQuality.avg_days_reg_to_excl, suffix: 'd' },
-                  { label: 'Avg Excl → Offer', a: agentQuality.avg_days_excl_to_offer, c: companyQuality.avg_days_excl_to_offer, suffix: 'd' },
-                  { label: 'Avg Offer → Close', a: agentQuality.avg_days_offer_to_closing, c: companyQuality.avg_days_offer_to_closing, suffix: 'd' },
-                  { label: 'Avg Total Journey', a: agentQuality.avg_days_total_journey, c: companyQuality.avg_days_total_journey, suffix: 'd' },
-                  { label: 'Price Delta %', a: agentQuality.avg_price_delta_pct, c: companyQuality.avg_price_delta_pct, suffix: '%' },
+                  { label: 'Avg Reg → Excl', a: agentQuality.avg_days_reg_to_excl, o: officeQuality.avg_days_reg_to_excl, c: companyQuality.avg_days_reg_to_excl, suffix: 'd' },
+                  { label: 'Avg Excl → Offer', a: agentQuality.avg_days_excl_to_offer, o: officeQuality.avg_days_excl_to_offer, c: companyQuality.avg_days_excl_to_offer, suffix: 'd' },
+                  { label: 'Avg Offer → Close', a: agentQuality.avg_days_offer_to_closing, o: officeQuality.avg_days_offer_to_closing, c: companyQuality.avg_days_offer_to_closing, suffix: 'd' },
+                  { label: 'Avg Total Journey', a: agentQuality.avg_days_total_journey, o: officeQuality.avg_days_total_journey, c: companyQuality.avg_days_total_journey, suffix: 'd' },
+                  { label: 'Price Delta %', a: agentQuality.avg_price_delta_pct, o: officeQuality.avg_price_delta_pct, c: companyQuality.avg_price_delta_pct, suffix: '%' },
                 ].map(row => (
                   <tr key={row.label} className="border-b border-border-subtle">
                     <td className="py-1.5 pr-2 text-text-primary font-medium">{row.label}</td>
-                    <td className="py-1.5 px-2 text-right font-semibold tabular-nums">
+                    <td className={`py-1.5 px-2 text-right font-semibold tabular-nums ${
+                      row.suffix === 'd' && row.a != null && row.c != null
+                        ? row.a < row.c ? 'text-green-600' : row.a > row.c ? 'text-red-600' : ''
+                        : ''
+                    }`}>
                       {row.a != null ? `${row.a}${row.suffix}` : '—'}
+                    </td>
+                    <td className="py-1.5 px-2 text-right tabular-nums text-text-muted">
+                      {row.o != null ? `${row.o}${row.suffix}` : '—'}
                     </td>
                     <td className="py-1.5 pl-2 text-right tabular-nums text-text-secondary">
                       {row.c != null ? `${row.c}${row.suffix}` : '—'}
