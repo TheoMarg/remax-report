@@ -157,7 +157,7 @@ export function Agent360Content({ agentId }: Props) {
         <div className="grid grid-cols-2 gap-3">
           {myWps && (
             <div className="bg-surface rounded-lg p-3 border border-border-subtle">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-1">WPS Score</div>
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-1">WPS Score (Απόδοση)</div>
               <div className="flex items-baseline gap-2">
                 <span className="text-xl font-bold text-brand-blue">{myWps.wps.toFixed(1)}</span>
                 <span className="text-xs text-text-muted">#{myWpsRank} of {wpsResults.length}</span>
@@ -179,7 +179,7 @@ export function Agent360Content({ agentId }: Props) {
           )}
           {myPqs && (
             <div className="bg-surface rounded-lg p-3 border border-border-subtle">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-1">PQS Score</div>
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-1">PQS Score (Ποιότητα)</div>
               <div className="flex items-baseline gap-2">
                 <span className="text-xl font-bold text-brand-teal">{myPqs.pqs.toFixed(1)}</span>
                 <span className="text-xs text-text-muted">#{myPqsRank} of {pqsResults.length}</span>
@@ -203,12 +203,12 @@ export function Agent360Content({ agentId }: Props) {
       {/* ── YTD KPI summary ── */}
       <div className="grid grid-cols-3 gap-2">
         {[
-          { label: 'GCI', value: fmtEur(ytdGci), color: '#C9961A' },
-          { label: 'Closings', value: fmt(ytdClosings), color: '#D4722A' },
-          { label: 'Registrations', value: fmt(ytdRegistrations), color: '#1B5299' },
-          { label: 'Exclusives', value: fmt(ytdExclusives), color: '#168F80' },
-          { label: 'Showings', value: fmt(ytdShowings), color: '#6B5CA5' },
-          { label: 'Offers', value: fmt(ytdOffers), color: '#C9961A' },
+          { label: 'GCI (Τζίρος)', value: fmtEur(ytdGci), color: '#C9961A' },
+          { label: 'Closings (Κλεισ.)', value: fmt(ytdClosings), color: '#D4722A' },
+          { label: 'Registrations (Καταγρ.)', value: fmt(ytdRegistrations), color: '#1B5299' },
+          { label: 'Exclusives (Αποκλ.)', value: fmt(ytdExclusives), color: '#168F80' },
+          { label: 'Showings (Υποδ.)', value: fmt(ytdShowings), color: '#6B5CA5' },
+          { label: 'Offers (Προσφ.)', value: fmt(ytdOffers), color: '#C9961A' },
         ].map(kpi => (
           <div key={kpi.label} className="bg-surface rounded-lg p-2.5 text-center border border-border-subtle">
             <div className="text-[9px] font-semibold uppercase tracking-wider text-text-muted">{kpi.label}</div>
@@ -228,7 +228,7 @@ export function Agent360Content({ agentId }: Props) {
       {/* ── Conversion Rates ── */}
       {agentJourneys.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-text-primary mb-2">Conversion Rates ({period.label})</h3>
+          <h3 className="text-sm font-semibold text-text-primary mb-2">Conversion Rates (Ποσοστά Μετατροπής) — {period.label}</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
@@ -266,7 +266,7 @@ export function Agent360Content({ agentId }: Props) {
       {/* ── Quality Metrics ── */}
       {agentJourneys.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-text-primary mb-2">Quality Metrics</h3>
+          <h3 className="text-sm font-semibold text-text-primary mb-2">Quality Metrics (Δείκτες Ποιότητας)</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
@@ -303,7 +303,7 @@ export function Agent360Content({ agentId }: Props) {
       {/* ── Targets ── */}
       {agentTargets && (agentTargets.gci_target || agentTargets.exclusives_target) && (
         <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-text-primary">Business Plan {currentYear}</h3>
+          <h3 className="text-sm font-semibold text-text-primary">Business Plan (Στόχοι) {currentYear}</h3>
           <div className="space-y-2">
             {agentTargets.gci_target != null && agentTargets.gci_target > 0 && (
               <TargetBar label="GCI Target" actual={ytdGci} target={agentTargets.gci_target} color="#C9961A" formatter={fmtEur} />
@@ -321,20 +321,20 @@ export function Agent360Content({ agentId }: Props) {
       {/* ── Recent Closings ── */}
       <div>
         <h3 className="text-sm font-semibold text-text-primary mb-2">
-          Recent Closings ({recentClosings.length})
+          Recent Closings (Πρόσφατα Κλεισίματα) ({recentClosings.length})
         </h3>
         {recentClosings.length === 0 ? (
-          <p className="text-xs text-text-muted italic">No closings</p>
+          <p className="text-xs text-text-muted italic">Δεν υπάρχουν κλεισίματα</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
                 <tr className="text-left text-text-muted border-b border-border-default">
-                  <th className="pb-1.5 pr-3 font-medium">Code</th>
-                  <th className="pb-1.5 pr-3 font-medium">Area</th>
-                  <th className="pb-1.5 pr-3 font-medium text-right">Price</th>
+                  <th className="pb-1.5 pr-3 font-medium">Κωδικός</th>
+                  <th className="pb-1.5 pr-3 font-medium">Περιοχή</th>
+                  <th className="pb-1.5 pr-3 font-medium text-right">Τιμή</th>
                   <th className="pb-1.5 pr-3 font-medium text-right">GCI</th>
-                  <th className="pb-1.5 font-medium text-right">Date</th>
+                  <th className="pb-1.5 font-medium text-right">Ημ/νία</th>
                 </tr>
               </thead>
               <tbody>
@@ -364,19 +364,19 @@ export function Agent360Content({ agentId }: Props) {
       {/* ── Active Portfolio ── */}
       <div>
         <h3 className="text-sm font-semibold text-text-primary mb-2">
-          Active Mandates ({portfolioItems.length})
+          Active Mandates (Ενεργές Εντολές) ({portfolioItems.length})
         </h3>
         {portfolioItems.length === 0 ? (
-          <p className="text-xs text-text-muted italic">No active exclusives</p>
+          <p className="text-xs text-text-muted italic">Δεν υπάρχουν ενεργές αποκλειστικές</p>
         ) : (
           <div className="overflow-x-auto max-h-[180px] overflow-y-auto">
             <table className="w-full text-xs">
               <thead className="sticky top-0 bg-surface-card">
                 <tr className="text-left text-text-muted border-b border-border-default">
-                  <th className="pb-1.5 pr-3 font-medium">Code</th>
-                  <th className="pb-1.5 pr-3 font-medium">Type</th>
-                  <th className="pb-1.5 pr-3 font-medium text-right">Price</th>
-                  <th className="pb-1.5 font-medium text-right">Expires</th>
+                  <th className="pb-1.5 pr-3 font-medium">Κωδικός</th>
+                  <th className="pb-1.5 pr-3 font-medium">Τύπος</th>
+                  <th className="pb-1.5 pr-3 font-medium text-right">Τιμή</th>
+                  <th className="pb-1.5 font-medium text-right">Λήξη</th>
                 </tr>
               </thead>
               <tbody>
@@ -427,11 +427,11 @@ export function Agent360Content({ agentId }: Props) {
       {/* ── Showings & Withdrawals summary ── */}
       <div className="grid grid-cols-2 gap-3">
         <div className="flex items-center gap-2 text-sm text-text-secondary bg-surface rounded-lg p-3 border border-border-subtle">
-          <span className="text-text-muted text-xs">Showings:</span>
+          <span className="text-text-muted text-xs">Showings (Υποδ.):</span>
           <span className="font-bold text-brand-purple">{fmt(totalShowings)}</span>
         </div>
         <div className="flex items-center gap-2 text-sm text-text-secondary bg-surface rounded-lg p-3 border border-border-subtle">
-          <span className="text-text-muted text-xs">Withdrawals:</span>
+          <span className="text-text-muted text-xs">Withdrawals (Αποσ.):</span>
           <span className="font-bold text-brand-red">{fmt(totalWithdrawals)}</span>
         </div>
       </div>
@@ -439,7 +439,7 @@ export function Agent360Content({ agentId }: Props) {
       {/* ── Withdrawal reasons ── */}
       {allWithdrawalReasons.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-text-primary mb-2">Withdrawal Reasons</h3>
+          <h3 className="text-sm font-semibold text-text-primary mb-2">Withdrawal Reasons (Λόγοι Απόσυρσης)</h3>
           <div className="space-y-1">
             {allWithdrawalReasons.map(([reason, cnt]) => (
               <div key={reason} className="flex items-center gap-2 text-xs">

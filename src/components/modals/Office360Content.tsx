@@ -98,12 +98,12 @@ export function Office360Content({ office }: Props) {
       {/* ── YTD KPIs ── */}
       <div className="grid grid-cols-3 gap-2">
         {[
-          { label: 'GCI', value: fmtEur(ytdGci), color: '#C9961A' },
-          { label: 'Closings', value: fmt(ytdClosings), color: '#D4722A' },
-          { label: 'Registrations', value: fmt(ytdRegistrations), color: '#1B5299' },
-          { label: 'Exclusives', value: fmt(ytdExclusives), color: '#168F80' },
-          { label: 'Showings', value: fmt(ytdShowings), color: '#6B5CA5' },
-          { label: 'Offers', value: fmt(ytdOffers), color: '#C9961A' },
+          { label: 'GCI (Τζίρος)', value: fmtEur(ytdGci), color: '#C9961A' },
+          { label: 'Closings (Κλεισ.)', value: fmt(ytdClosings), color: '#D4722A' },
+          { label: 'Registrations (Καταγρ.)', value: fmt(ytdRegistrations), color: '#1B5299' },
+          { label: 'Exclusives (Αποκλ.)', value: fmt(ytdExclusives), color: '#168F80' },
+          { label: 'Showings (Υποδ.)', value: fmt(ytdShowings), color: '#6B5CA5' },
+          { label: 'Offers (Προσφ.)', value: fmt(ytdOffers), color: '#C9961A' },
         ].map(kpi => (
           <div key={kpi.label} className="bg-surface rounded-lg p-2.5 text-center border border-border-subtle">
             <div className="text-[9px] font-semibold uppercase tracking-wider text-text-muted">{kpi.label}</div>
@@ -130,7 +130,7 @@ export function Office360Content({ office }: Props) {
       {/* ── Conversion Rates ── */}
       {officeJourneys.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-text-primary mb-2">Conversion Rates ({period.label})</h3>
+          <h3 className="text-sm font-semibold text-text-primary mb-2">Conversion Rates (Ποσοστά Μετατροπής) — {period.label}</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
@@ -166,7 +166,7 @@ export function Office360Content({ office }: Props) {
       {/* ── Quality Metrics ── */}
       {officeJourneys.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-text-primary mb-2">Quality Metrics</h3>
+          <h3 className="text-sm font-semibold text-text-primary mb-2">Quality Metrics (Δείκτες Ποιότητας)</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
@@ -202,7 +202,7 @@ export function Office360Content({ office }: Props) {
       {/* ── WPS Leaderboard ── */}
       {officeWps.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-text-primary mb-2">WPS Leaderboard</h3>
+          <h3 className="text-sm font-semibold text-text-primary mb-2">WPS Leaderboard (Κατάταξη Απόδοσης)</h3>
           <div className="space-y-2">
             {officeWps.map((w, i) => (
               <ScoreBar key={w.agent_id} rank={i + 1} label={w.canonical_name || `Agent ${w.agent_id}`} score={w.wps} maxScore={officeWps[0]?.wps || 100} color="#1B5299" />
@@ -214,7 +214,7 @@ export function Office360Content({ office }: Props) {
       {/* ── PQS Leaderboard ── */}
       {pqsResults.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-text-primary mb-2">PQS Leaderboard</h3>
+          <h3 className="text-sm font-semibold text-text-primary mb-2">PQS Leaderboard (Κατάταξη Ποιότητας)</h3>
           <div className="space-y-2">
             {pqsResults.map((p, i) => (
               <ScoreBar key={p.agent_id} rank={i + 1} label={p.canonical_name || `Agent ${p.agent_id}`} score={p.pqs} maxScore={100} color="#168F80" />

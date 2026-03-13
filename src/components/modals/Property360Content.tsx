@@ -232,15 +232,15 @@ export function Property360Content({ propertyId }: Props) {
       {/* Journey Milestones */}
       {journey && (
         <div className="bg-surface rounded-lg p-3 border border-border-subtle">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">Journey Milestones</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">Journey Milestones (Στάδια Πορείας)</h3>
           <div className="flex items-center gap-1 text-[10px]">
             {[
-              { label: 'Reg', done: journey.has_registration, date: journey.dt_registration },
-              { label: 'Excl', done: journey.has_exclusive, date: journey.dt_exclusive },
-              { label: 'Pub', done: journey.has_published, date: journey.dt_published },
-              { label: 'Show', done: journey.has_showing, date: journey.dt_first_showing },
-              { label: 'Offer', done: journey.has_offer, date: journey.dt_offer },
-              { label: 'Close', done: journey.has_closing, date: journey.dt_closing },
+              { label: 'Καταγρ.', done: journey.has_registration, date: journey.dt_registration },
+              { label: 'Αποκλ.', done: journey.has_exclusive, date: journey.dt_exclusive },
+              { label: 'Δημοσ.', done: journey.has_published, date: journey.dt_published },
+              { label: 'Υπόδ.', done: journey.has_showing, date: journey.dt_first_showing },
+              { label: 'Προσφ.', done: journey.has_offer, date: journey.dt_offer },
+              { label: 'Κλείσ.', done: journey.has_closing, date: journey.dt_closing },
             ].map((m, i, arr) => (
               <div key={m.label} className="flex items-center gap-1 flex-1">
                 <div className={`flex flex-col items-center flex-1 ${m.done ? 'text-brand-green' : 'text-text-muted'}`}>
@@ -301,7 +301,7 @@ export function Property360Content({ propertyId }: Props) {
 
       {/* Timeline */}
       <div>
-        <h3 className="text-sm font-semibold text-text-primary mb-2">Timeline</h3>
+        <h3 className="text-sm font-semibold text-text-primary mb-2">Timeline (Χρονολόγιο)</h3>
         <PropertyTimeline events={eventsData} stages={stages} />
       </div>
 
