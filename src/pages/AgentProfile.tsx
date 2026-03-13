@@ -626,7 +626,8 @@ export function AgentProfile({ period }: Props) {
                     const p = e.properties;
                     const propId = e.property_id ?? p?.property_id;
                     const code = e.property_code || p?.property_code || propId || '—';
-                    const isExpiringSoon = e.end_date && new Date(e.end_date) <= new Date(Date.now() + 30 * 86400000);
+                    const thirtyDaysFromNow = new Date(Date.now() + 30 * 86400000);
+                    const isExpiringSoon = e.end_date && new Date(e.end_date) <= thirtyDaysFromNow;
                     return (
                       <tr key={e.id} className={`border-b border-border-subtle ${isExpiringSoon ? 'bg-amber-50' : ''}`}>
                         <td className="py-2 pr-3">

@@ -115,7 +115,6 @@ export function ensemble(
 
   const len = forecasts[0].values.length;
   const w = weights ?? forecasts.map(() => 1 / forecasts.length);
-  const totalWeight = w.reduce((s, v) => s + v, 0);
 
   const mid: number[] = [];
   const low: number[] = [];

@@ -4,7 +4,7 @@ import {
   ReferenceLine, Legend,
 } from 'recharts';
 import { useForecast } from '../../hooks/useForecast';
-import type { ForecastResult } from '../../lib/forecasting';
+
 
 const MONTH_SHORT = ['Ιαν', 'Φεβ', 'Μαρ', 'Απρ', 'Μάι', 'Ιούν', 'Ιούλ', 'Αύγ', 'Σεπ', 'Οκτ', 'Νοέ', 'Δεκ'];
 
@@ -23,7 +23,7 @@ export function RevenueForecast() {
   const [whatIfPct, setWhatIfPct] = useState(0);
   const { data: forecast = [], isLoading } = useForecast(officeFilter);
 
-  const { chartData, todayMonth, methodTable, quarterlyGci } = useMemo(() => {
+  const { chartData, todayMonth: _todayMonth, methodTable, quarterlyGci } = useMemo(() => {
     const now = new Date();
     const todayMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
@@ -132,7 +132,7 @@ export function RevenueForecast() {
                   fontSize: 12,
                   boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
                 }}
-                formatter={(value: number, name: string) => [fmtEur(value), name]}
+                formatter={(value, name) => [fmtEur(Number(value) || 0), String(name)]}
               />
               <Legend wrapperStyle={{ fontSize: 11 }} />
 

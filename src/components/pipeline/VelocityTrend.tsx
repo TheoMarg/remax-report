@@ -125,7 +125,7 @@ export function VelocityTrend({ journeys }: Props) {
                 fontSize: 12,
                 boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
               }}
-              formatter={(value: number, name: string) => [`${value}d`, name]}
+              formatter={(value, name) => [`${value ?? 0}d`, String(name)]}
               labelFormatter={(label) => `${label}`}
             />
             <Legend wrapperStyle={{ fontSize: 11 }} />

@@ -66,7 +66,7 @@ export function Overview({ period }: Props) {
       const values: number[] = [];
       const agentMap = new Map<number, number>();
       for (const m of individuals) {
-        agentMap.set(m.agent_id, (agentMap.get(m.agent_id) || 0) + (Number(m[def.crmField]) || 0));
+        agentMap.set(m.agent_id, (agentMap.get(m.agent_id) || 0) + (Number(m[def.crmField as keyof typeof m]) || 0));
       }
       for (const v of agentMap.values()) values.push(v);
       result[def.key] = values;

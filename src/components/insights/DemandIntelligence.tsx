@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { useDemandSupply, type DemandSupplyRow } from '../../hooks/useDemandSupply';
+import { useDemandSupply } from '../../hooks/useDemandSupply';
 
 const STATUS_ICON: Record<string, string> = {
   green: '\u{1F7E2}',

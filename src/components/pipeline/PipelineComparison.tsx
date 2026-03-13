@@ -145,7 +145,7 @@ export function PipelineComparison({ journeys, stage, agents, teamMembers }: Pro
     const isClosing = stage === 'closing';
     const hasNext = !!NEXT_STAGE[stage];
 
-    const rows = [
+    const rows: { label: string; entity: number | string | null; team: number | string | null; office: number | string | null; company: number | string | null }[] = [
       {
         label: 'Count (Αριθμός)',
         entity: entity.count,

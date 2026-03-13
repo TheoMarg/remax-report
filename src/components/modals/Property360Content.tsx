@@ -114,7 +114,7 @@ export function Property360Content({ propertyId }: Props) {
   const { total: companyAvg } = useQualityMetrics(journeys);
 
   // Marketability score for this property
-  const { marketAdjusted, benchmarks } = useMarketability();
+  const { marketAdjusted } = useMarketability();
   const marketabilityScore = useMemo(() => {
     for (const agentResult of marketAdjusted) {
       const propScore = agentResult.property_scores.find(ps => ps.property_id === propertyId);

@@ -239,7 +239,7 @@ export function PortfolioPublished({ period }: Props) {
     });
 
     return list;
-  }, [onlineProperties, exclusiveSet, officeFilter, statusFilter, exclusiveOnly, sortKey, sortAsc]);
+  }, [onlineProperties, exclusiveSet, exclusiveDaysLeft, officeFilter, statusFilter, exclusiveOnly, sortKey, sortAsc]);
 
   function handleSort(key: SortKey) {
     if (sortKey === key) {

@@ -89,8 +89,9 @@ export function DrilldownDrawer({ metric, period, agentId, title, count, onClose
       const { data, error } = await query;
       if (error) throw error;
 
-      return (data || []).map((row: Record<string, unknown>) => ({
-        id: row.id || row.property_id || Math.random(),
+      const rows = (data || []) as unknown as Record<string, unknown>[];
+      return rows.map((row, index) => ({
+        id: row.id || row.property_id || `row-${index}`,
         property_id: row.property_id as string | undefined,
         property_code: row.property_code as string | null | undefined,
         agent_id: row.agent_id as number | undefined,
