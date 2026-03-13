@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import type { PropertyPricing, ClosingPricing, Period } from '../lib/types';
+import { computeEndExclusive } from '../lib/propertyMetrics';
 
 type PricingMode = 'active' | 'closed';
 
@@ -20,7 +21,7 @@ export function usePricingData(mode: PricingMode, period?: Period) {
         if (period) {
           query = query
             .gte('closing_date', period.start)
-            .lte('closing_date', period.end);
+            .lt('closing_date', computeEndExclusive(period.end));
         }
         const { data, error } = await query;
         if (error) throw error;

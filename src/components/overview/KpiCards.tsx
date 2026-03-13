@@ -15,7 +15,7 @@ interface Props {
 const OFFICE_SHORT: Record<string, string> = {
   larissa: 'Λάρισα',
   katerini: 'Κατερίνη',
-  teams: 'Teams',
+  teams: 'Ομάδες',
 };
 
 function DeltaBadge({ delta, hasAcc }: { delta: number; hasAcc: boolean }) {
@@ -92,7 +92,7 @@ export function KpiCards({ kpis, agentValues, onDrilldown }: Props) {
                   {kpi.crm.toLocaleString('el-GR')}
                 </div>
               )}
-              {kpi.sale != null && kpi.rent != null && (
+              {kpi.sale != null && kpi.rent != null && (kpi.sale > 0 || kpi.rent > 0) && (
                 <div className="text-[10px] text-text-muted mt-1 flex gap-1.5">
                   <span className="text-brand-blue">Π {kpi.sale}</span>
                   <span className="text-text-muted">/</span>
@@ -101,36 +101,42 @@ export function KpiCards({ kpis, agentValues, onDrilldown }: Props) {
               )}
               {/* Per-office breakdown */}
               <div className="grid grid-cols-[auto_1fr_auto] gap-x-2 gap-y-0.5 text-[10px] text-text-muted mt-2 pt-2 border-t border-border-subtle items-center">
-                {kpi.byOffice.filter(o => o.office !== 'teams').map((o) => (
-                  <>
-                    <span key={`${o.office}-label`}>{OFFICE_SHORT[o.office] || o.office}:</span>
-                    <span key={`${o.office}-crm`} className="font-semibold text-text-primary text-right">{o.crm.toLocaleString('el-GR')}</span>
-                    <span key={`${o.office}-sr`} className="text-[9px] text-right">
-                      {o.sale != null && o.rent != null ? (
-                        <>
-                          <span className="text-brand-blue">Π{o.sale}</span>
-                          <span className="text-text-muted">/</span>
-                          <span className="text-brand-orange">Ε{o.rent}</span>
-                        </>
-                      ) : null}
-                    </span>
-                  </>
-                ))}
-                {kpi.byOffice.filter(o => o.office === 'teams').map((o) => (
-                  <div key={o.office} className="col-span-3 grid grid-cols-[auto_1fr_auto] gap-x-2 items-center bg-brand-gold/10 px-1.5 py-0.5 rounded-md border border-brand-gold/20 -mx-1.5">
-                    <span className="text-brand-gold font-semibold">Teams:</span>
-                    <span className="font-semibold text-text-primary text-right">{o.crm.toLocaleString('el-GR')}</span>
-                    <span className="text-[9px] text-right">
-                      {o.sale != null && o.rent != null ? (
-                        <>
-                          <span className="text-brand-blue">Π{o.sale}</span>
-                          <span className="text-text-muted">/</span>
-                          <span className="text-brand-orange">Ε{o.rent}</span>
-                        </>
-                      ) : null}
-                    </span>
-                  </div>
-                ))}
+                {kpi.byOffice.filter(o => o.office !== 'teams').map((o) => {
+                  const hasSR = o.sale != null && o.rent != null && (o.sale > 0 || o.rent > 0);
+                  return (
+                    <div key={o.office} className="col-span-3 grid grid-cols-[auto_1fr_auto] gap-x-2 items-center">
+                      <span>{OFFICE_SHORT[o.office] || o.office}:</span>
+                      <span className="font-semibold text-text-primary text-right">{o.crm.toLocaleString('el-GR')}</span>
+                      <span className="text-[9px] text-right">
+                        {hasSR ? (
+                          <>
+                            <span className="text-brand-blue">Π{o.sale}</span>
+                            <span className="text-text-muted">/</span>
+                            <span className="text-brand-orange">Ε{o.rent}</span>
+                          </>
+                        ) : null}
+                      </span>
+                    </div>
+                  );
+                })}
+                {kpi.byOffice.filter(o => o.office === 'teams').map((o) => {
+                  const hasSR = o.sale != null && o.rent != null && (o.sale > 0 || o.rent > 0);
+                  return (
+                    <div key={o.office} className="col-span-3 grid grid-cols-[auto_1fr_auto] gap-x-2 items-center bg-brand-gold/10 px-1.5 py-0.5 rounded-md border border-brand-gold/20 -mx-1.5">
+                      <span className="text-brand-gold font-semibold">Ομάδες:</span>
+                      <span className="font-semibold text-text-primary text-right">{o.crm.toLocaleString('el-GR')}</span>
+                      <span className="text-[9px] text-right">
+                        {hasSR ? (
+                          <>
+                            <span className="text-brand-blue">Π{o.sale}</span>
+                            <span className="text-text-muted">/</span>
+                            <span className="text-brand-orange">Ε{o.rent}</span>
+                          </>
+                        ) : null}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
               {hasAcc && (
                 <div className="flex items-center gap-2 mt-2">

@@ -27,7 +27,7 @@ function computeRates(journeys: PropertyJourney[]): ConversionRates {
   const close = journeys.filter(j => j.has_closing);
 
   const safeRatio = (total: number, passed: number) =>
-    passed > 0 ? Math.round((total / passed) * 10) / 10 : null;
+    passed > 0 ? Math.round((total / passed) * 100) / 100 : null;
 
   const safePct = (passed: number, total: number) =>
     total > 0 ? Math.round((passed / total) * 1000) / 10 : null;

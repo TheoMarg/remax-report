@@ -51,8 +51,14 @@ export interface CombinedMetric {
   crm_showings_rent: number;
   crm_withdrawals: number;
   crm_offers: number;
+  crm_offers_sale: number;
+  crm_offers_rent: number;
   crm_closings: number;
+  crm_closings_sale: number;
+  crm_closings_rent: number;
   crm_billing: number;
+  crm_billing_sale: number;
+  crm_billing_rent: number;
   gci: number;
   // ACC
   acc_registrations: number;
@@ -486,21 +492,17 @@ export interface PqsWeight {
   updated_at: string;
 }
 
-// ── v2: Agent Targets (from agent_targets table) ──
+// ── v2: Agent Targets (from targets_annual table) ──
 
 export interface AgentTarget {
   id: number;
   agent_id: number;
   year: number;
+  office: string | null;
   gci_target: number | null;
-  registrations_target: number | null;
+  gci_realistic: number | null;
   exclusives_target: number | null;
-  showings_target: number | null;
-  offers_target: number | null;
-  closings_target: number | null;
-  notes: string | null;
-  updated_by: string | null;
-  updated_at: string;
+  source: string | null;
 }
 
 // ── v2: Entity Reference (for 360° modal navigation) ──

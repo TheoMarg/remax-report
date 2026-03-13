@@ -271,7 +271,7 @@ export function AgentProfile({ period }: Props) {
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
         <div className="relative z-10 flex flex-wrap items-start justify-between gap-4">
           <div>
-            <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-white/60 bg-white/10 px-2.5 py-1 rounded-full mb-3">
+            <span className="inline-block text-[10px] font-bold tracking-widest text-white/60 bg-white/10 px-2.5 py-1 rounded-full mb-3">
               Agent Profile
             </span>
             <div className="flex items-center gap-3">
@@ -309,7 +309,7 @@ export function AgentProfile({ period }: Props) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           {/* WPS */}
           <div className="card-premium p-5">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-2">WPS Score</div>
+            <div className="text-[10px] font-semibold tracking-wider text-text-muted mb-2">WPS Score</div>
             <div className="flex items-baseline gap-2 mb-3">
               <span className="text-3xl font-bold text-brand-blue">{myWps?.wps.toFixed(1) ?? '—'}</span>
               <span className="text-sm text-text-muted">#{myWpsRank} of {wpsResults.length}</span>
@@ -332,7 +332,7 @@ export function AgentProfile({ period }: Props) {
 
           {/* PQS */}
           <div className="card-premium p-5">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-2">PQS Score</div>
+            <div className="text-[10px] font-semibold tracking-wider text-text-muted mb-2">PQS Score</div>
             <div className="flex items-baseline gap-2 mb-3">
               <span className="text-3xl font-bold text-brand-teal">{myPqs?.pqs.toFixed(1) ?? '—'}</span>
               <span className="text-sm text-text-muted">#{myPqsRank} of {pqsResults.length}</span>
@@ -362,7 +362,7 @@ export function AgentProfile({ period }: Props) {
             {/* Portfolio mix breakdown */}
             {portfolioMix && portfolioMix.sorted.length > 0 && (
               <div className="mt-3 pt-2 border-t border-border-subtle">
-                <div className="text-[9px] font-semibold uppercase tracking-wider text-text-muted mb-1.5">Portfolio Mix</div>
+                <div className="text-[9px] font-semibold tracking-wider text-text-muted mb-1.5">Portfolio Mix</div>
                 <div className="flex flex-wrap gap-1.5">
                   {portfolioMix.sorted.map(([sc, count]) => (
                     <span key={sc} className="text-[10px] bg-surface-light border border-border-subtle rounded px-1.5 py-0.5 text-text-secondary">
@@ -377,7 +377,7 @@ export function AgentProfile({ period }: Props) {
           {/* Radar */}
           {radarData.length > 0 && (
             <div className="card-premium p-5">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-2">Performance Radar</div>
+              <div className="text-[10px] font-semibold tracking-wider text-text-muted mb-2">Performance Radar</div>
               <div className="h-[230px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <RadarChart data={radarData} outerRadius="70%">
@@ -405,7 +405,7 @@ export function AgentProfile({ period }: Props) {
             { label: 'Προσφορές', value: fmt(ytd.offers), color: '#C9961A' },
           ].map(kpi => (
             <div key={kpi.label} className="card-premium p-4 text-center">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-1">{kpi.label}</div>
+              <div className="text-[10px] font-semibold tracking-wider text-text-muted mb-1">{kpi.label}</div>
               <div className="text-xl font-bold" style={{ color: kpi.color }}>{kpi.value}</div>
             </div>
           ))}
@@ -443,7 +443,7 @@ export function AgentProfile({ period }: Props) {
 
           {/* Conversion Rates */}
           <div className="card-premium p-5">
-            <h3 className="text-sm font-semibold text-text-primary mb-3">Conversion Rates ({period.label})</h3>
+            <h3 className="text-sm font-semibold text-text-primary mb-3">Αναλογίες Μετατροπής ({period.label})</h3>
             <table className="w-full text-xs">
               <thead>
                 <tr className="text-text-muted border-b border-border-default">
@@ -455,27 +455,29 @@ export function AgentProfile({ period }: Props) {
               </thead>
               <tbody>
                 {[
-                  { label: 'Reg → Excl', a: agentConv.reg_to_excl_pct, o: officeConv.reg_to_excl_pct, c: companyConv.reg_to_excl_pct },
-                  { label: 'Excl → Close', a: agentConv.excl_to_closing_pct, o: officeConv.excl_to_closing_pct, c: companyConv.excl_to_closing_pct },
-                  { label: 'Show → Offer', a: agentConv.showing_to_offer_pct, o: officeConv.showing_to_offer_pct, c: companyConv.showing_to_offer_pct },
-                  { label: 'Offer → Close', a: agentConv.offer_to_closing_pct, o: officeConv.offer_to_closing_pct, c: companyConv.offer_to_closing_pct },
-                ].map(row => (
+                  { label: 'Καταγραφή → Ανάθεση', a: agentConv.reg_to_excl, o: officeConv.reg_to_excl, c: companyConv.reg_to_excl },
+                  { label: 'Ανάθεση → Κλείσιμο', a: agentConv.excl_to_closing, o: officeConv.excl_to_closing, c: companyConv.excl_to_closing },
+                  { label: 'Υπόδειξη → Προσφορά', a: agentConv.showing_to_offer, o: officeConv.showing_to_offer, c: companyConv.showing_to_offer },
+                  { label: 'Προσφορά → Κλείσιμο', a: agentConv.offer_to_closing, o: officeConv.offer_to_closing, c: companyConv.offer_to_closing },
+                ].map(row => {
+                  const fmtR = (v: number | null) => v != null ? `${v.toLocaleString('el-GR', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}:1` : '—';
+                  return (
                   <tr key={row.label} className="border-b border-border-subtle">
                     <td className="py-2 text-text-primary font-medium">{row.label}</td>
                     <td className={`py-2 text-right font-semibold tabular-nums ${
-                      row.a != null && row.c != null ? (row.a > row.c ? 'text-green-600' : row.a < row.c ? 'text-red-600' : '') : ''
-                    }`}>{fmtPct(row.a)}</td>
-                    <td className="py-2 text-right tabular-nums">{fmtPct(row.o)}</td>
-                    <td className="py-2 text-right tabular-nums text-text-secondary">{fmtPct(row.c)}</td>
-                  </tr>
-                ))}
+                      row.a != null && row.c != null ? (row.a < row.c ? 'text-green-600' : row.a > row.c ? 'text-red-600' : '') : ''
+                    }`}>{fmtR(row.a)}</td>
+                    <td className="py-2 text-right tabular-nums">{fmtR(row.o)}</td>
+                    <td className="py-2 text-right tabular-nums text-text-secondary">{fmtR(row.c)}</td>
+                  </tr>);
+                })}
               </tbody>
             </table>
           </div>
 
           {/* Quality Metrics */}
           <div className="card-premium p-5">
-            <h3 className="text-sm font-semibold text-text-primary mb-3">Quality Metrics</h3>
+            <h3 className="text-sm font-semibold text-text-primary mb-3">Δείκτες Ποιότητας</h3>
             <table className="w-full text-xs">
               <thead>
                 <tr className="text-text-muted border-b border-border-default">
@@ -486,11 +488,11 @@ export function AgentProfile({ period }: Props) {
               </thead>
               <tbody>
                 {[
-                  { label: 'Reg → Excl', a: agentQuality.avg_days_reg_to_excl, c: companyQuality.avg_days_reg_to_excl, s: 'd' },
-                  { label: 'Excl → Offer', a: agentQuality.avg_days_excl_to_offer, c: companyQuality.avg_days_excl_to_offer, s: 'd' },
-                  { label: 'Offer → Close', a: agentQuality.avg_days_offer_to_closing, c: companyQuality.avg_days_offer_to_closing, s: 'd' },
+                  { label: 'Καταγραφή → Ανάθεση', a: agentQuality.avg_days_reg_to_excl, c: companyQuality.avg_days_reg_to_excl, s: 'd' },
+                  { label: 'Ανάθεση → Προσφορά', a: agentQuality.avg_days_excl_to_offer, c: companyQuality.avg_days_excl_to_offer, s: 'd' },
+                  { label: 'Προσφορά → Κλείσιμο', a: agentQuality.avg_days_offer_to_closing, c: companyQuality.avg_days_offer_to_closing, s: 'd' },
                   { label: 'Συνολική Διαδρομή', a: agentQuality.avg_days_total_journey, c: companyQuality.avg_days_total_journey, s: 'd' },
-                  { label: 'Price Delta', a: agentQuality.avg_price_delta_pct, c: companyQuality.avg_price_delta_pct, s: '%' },
+                  { label: 'Διαφορά Τιμής', a: agentQuality.avg_price_delta_pct, c: companyQuality.avg_price_delta_pct, s: '%' },
                 ].map(row => (
                   <tr key={row.label} className="border-b border-border-subtle">
                     <td className="py-2 text-text-primary font-medium">{row.label}</td>
@@ -612,7 +614,7 @@ export function AgentProfile({ period }: Props) {
             <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
               <table className="w-full text-xs">
                 <thead className="sticky top-0 bg-surface-card">
-                  <tr className="text-left text-text-muted border-b border-border-default text-[10px] uppercase tracking-wider">
+                  <tr className="text-left text-text-muted border-b border-border-default text-[10px] tracking-wider">
                     <th className="pb-2 pr-3 font-semibold">Code</th>
                     <th className="pb-2 pr-3 font-semibold">Τύπος</th>
                     <th className="pb-2 pr-3 font-semibold">Περιοχή</th>
@@ -684,7 +686,7 @@ export function AgentProfile({ period }: Props) {
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="text-left text-text-muted border-b border-border-default text-[10px] uppercase tracking-wider">
+                  <tr className="text-left text-text-muted border-b border-border-default text-[10px] tracking-wider">
                     <th className="pb-2 pr-3 font-semibold">Code</th>
                     <th className="pb-2 pr-3 font-semibold">Περιοχή</th>
                     <th className="pb-2 pr-3 font-semibold text-right">Τιμή</th>

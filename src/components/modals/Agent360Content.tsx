@@ -198,6 +198,30 @@ export function Agent360Content({ agentId }: Props) {
   const portfolioPropertyIds = portfolioItems.map(e => e.property_id).filter(Boolean) as string[];
   const allPropertyIds = [...new Set([...closingPropertyIds, ...portfolioPropertyIds])];
 
+  // Sales vs Rentals split
+  const salesRentals = useMemo(() => {
+    const sales = agentJourneys.filter(j => j.category === 'sale' || j.category === 'Πώληση');
+    const rentals = agentJourneys.filter(j => j.category !== 'sale' && j.category !== 'Πώληση');
+    const salesClosed = sales.filter(j => j.has_closing && j.days_excl_to_closing != null);
+    const rentalsClosed = rentals.filter(j => j.has_closing && j.days_excl_to_closing != null);
+    return {
+      salesCount: sales.length,
+      rentalsCount: rentals.length,
+      avgSalesDays: salesClosed.length > 0
+        ? Math.round(salesClosed.reduce((s, j) => s + j.days_excl_to_closing!, 0) / salesClosed.length)
+        : null,
+      avgRentalsDays: rentalsClosed.length > 0
+        ? Math.round(rentalsClosed.reduce((s, j) => s + j.days_excl_to_closing!, 0) / rentalsClosed.length)
+        : null,
+    };
+  }, [agentJourneys]);
+
+  // Target achievement %
+  const targetAchievementPct = useMemo(() => {
+    if (!agentTargets?.gci_target || agentTargets.gci_target <= 0) return null;
+    return Math.round((ytdGci / agentTargets.gci_target) * 100);
+  }, [ytdGci, agentTargets]);
+
   if (isLoading) {
     return (
       <div className="p-8 space-y-4">
@@ -235,12 +259,36 @@ export function Agent360Content({ agentId }: Props) {
         )}
       </div>
 
+      {/* ── Summary: Target + Sales/Rentals ── */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-surface rounded-lg p-3 border-2 border-[#168F80] text-center">
+          <div className="text-[10px] font-semibold text-text-muted">Επίτευξη Στόχου</div>
+          <div className="text-2xl font-bold mt-1" style={{ color: targetAchievementPct != null ? (targetAchievementPct >= 100 ? '#1D7A4E' : targetAchievementPct >= 50 ? '#C9961A' : '#C9372C') : undefined }}>
+            {targetAchievementPct != null ? `${targetAchievementPct}%` : '—'}
+          </div>
+        </div>
+        <div className="bg-surface rounded-lg p-3 border-2 border-[#168F80] text-center">
+          <div className="text-2xl font-bold text-text-primary">{salesRentals.salesCount}</div>
+          <div className="text-[10px] font-semibold text-text-muted">Πωλήσεις (YTD)</div>
+          <div className="text-[10px] text-text-muted mt-1">
+            <span className="font-bold text-text-primary">{salesRentals.avgSalesDays != null ? `${salesRentals.avgSalesDays} ημ` : '—'}</span> Ανάθεση → Κλείσιμο
+          </div>
+        </div>
+        <div className="bg-surface rounded-lg p-3 border-2 border-[#168F80] text-center">
+          <div className="text-2xl font-bold text-text-primary">{salesRentals.rentalsCount}</div>
+          <div className="text-[10px] font-semibold text-text-muted">Ενοικιάσεις (YTD)</div>
+          <div className="text-[10px] text-text-muted mt-1">
+            <span className="font-bold text-text-primary">{salesRentals.avgRentalsDays != null ? `${salesRentals.avgRentalsDays} ημ` : '—'}</span> Ανάθεση → Κλείσιμο
+          </div>
+        </div>
+      </div>
+
       {/* ── WPS & PQS Scores ── */}
       {(myWps || myPqs) && (
         <div className="grid grid-cols-2 gap-3">
           {myWps && (
             <div className="bg-surface rounded-lg p-3 border border-border-subtle">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-1">WPS Score (Απόδοση)</div>
+              <div className="text-[10px] font-semibold tracking-wider text-text-muted mb-1">WPS Score (Απόδοση)</div>
               <div className="flex items-baseline gap-2">
                 <span className="text-xl font-bold text-brand-blue">{myWps.wps.toFixed(1)}</span>
                 <span className="text-xs text-text-muted">#{myWpsRank} of {wpsResults.length}</span>
@@ -262,7 +310,7 @@ export function Agent360Content({ agentId }: Props) {
           )}
           {myPqs && (
             <div className="bg-surface rounded-lg p-3 border border-border-subtle">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-1">PQS Score (Ποιότητα)</div>
+              <div className="text-[10px] font-semibold tracking-wider text-text-muted mb-1">PQS Score (Ποιότητα)</div>
               <div className="flex items-baseline gap-2">
                 <span className="text-xl font-bold text-brand-teal">{myPqs.pqs.toFixed(1)}</span>
                 <span className="text-xs text-text-muted">#{myPqsRank} of {pqsResults.length}</span>
@@ -295,7 +343,7 @@ export function Agent360Content({ agentId }: Props) {
       {/* ── Target Pacing ── */}
       {agentPacing.length > 0 && (
         <div className="bg-surface rounded-lg p-3 border border-border-subtle">
-          <div className="text-[9px] font-semibold uppercase tracking-wider text-text-muted mb-2">
+          <div className="text-[9px] font-semibold tracking-wider text-text-muted mb-2">
             Target Pacing (Πορεία Στόχων) — {idealPctLabel}% of year
           </div>
           <div className="space-y-1.5">
@@ -353,7 +401,7 @@ export function Agent360Content({ agentId }: Props) {
             : kpi.color;
           return (
             <div key={kpi.label} className="bg-surface rounded-lg p-2.5 text-center border border-border-subtle">
-              <div className="text-[9px] font-semibold uppercase tracking-wider text-text-muted">{kpi.label}</div>
+              <div className="text-[9px] font-semibold tracking-wider text-text-muted">{kpi.label}</div>
               <div className="text-base font-bold mt-0.5" style={{ color: valueColor }}>{kpi.value}</div>
               {comp && (comp.officeAvg > 0 || comp.companyAvg > 0) && (
                 <div className="mt-1 space-y-0.5">
@@ -385,7 +433,7 @@ export function Agent360Content({ agentId }: Props) {
       {/* ── Conversion Rates ── */}
       {agentJourneys.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-text-primary mb-2">Conversion Rates (Ποσοστά Μετατροπής) — {ytdPeriod.label}</h3>
+          <h3 className="text-sm font-semibold text-text-primary mb-2">Ποσοστά Μετατροπής — {ytdPeriod.label}</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
@@ -398,20 +446,20 @@ export function Agent360Content({ agentId }: Props) {
               </thead>
               <tbody>
                 {[
-                  { label: 'Reg → Excl', a: agentConv.reg_to_excl_pct, o: officeConv.reg_to_excl_pct, c: companyConv.reg_to_excl_pct },
-                  { label: 'Excl → Close', a: agentConv.excl_to_closing_pct, o: officeConv.excl_to_closing_pct, c: companyConv.excl_to_closing_pct },
-                  { label: 'Show → Offer', a: agentConv.showing_to_offer_pct, o: officeConv.showing_to_offer_pct, c: companyConv.showing_to_offer_pct },
-                  { label: 'Offer → Close', a: agentConv.offer_to_closing_pct, o: officeConv.offer_to_closing_pct, c: companyConv.offer_to_closing_pct },
+                  { label: 'Καταγραφή → Ανάθεση', a: agentConv.reg_to_excl, o: officeConv.reg_to_excl, c: companyConv.reg_to_excl },
+                  { label: 'Ανάθεση → Κλείσιμο', a: agentConv.excl_to_closing, o: officeConv.excl_to_closing, c: companyConv.excl_to_closing },
+                  { label: 'Υπόδειξη → Προσφορά', a: agentConv.showing_to_offer, o: officeConv.showing_to_offer, c: companyConv.showing_to_offer },
+                  { label: 'Προσφορά → Κλείσιμο', a: agentConv.offer_to_closing, o: officeConv.offer_to_closing, c: companyConv.offer_to_closing },
                 ].map(row => (
                   <tr key={row.label} className="border-b border-border-subtle">
                     <td className="py-1.5 pr-2 text-text-primary font-medium">{row.label}</td>
                     <td className={`py-1.5 px-2 text-right font-semibold tabular-nums ${
-                      row.a != null && row.c != null && row.a > row.c ? 'text-green-600' : row.a != null && row.c != null && row.a < row.c ? 'text-red-600' : ''
+                      row.a != null && row.c != null && row.a < row.c ? 'text-green-600' : row.a != null && row.c != null && row.a > row.c ? 'text-red-600' : ''
                     }`}>
-                      {row.a != null ? `${row.a}%` : '—'}
+                      {row.a != null ? `${row.a.toLocaleString('el-GR', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}:1` : '—'}
                     </td>
-                    <td className="py-1.5 px-2 text-right tabular-nums">{row.o != null ? `${row.o}%` : '—'}</td>
-                    <td className="py-1.5 pl-2 text-right tabular-nums text-text-secondary">{row.c != null ? `${row.c}%` : '—'}</td>
+                    <td className="py-1.5 px-2 text-right tabular-nums">{row.o != null ? `${row.o.toLocaleString('el-GR', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}:1` : '—'}</td>
+                    <td className="py-1.5 pl-2 text-right tabular-nums text-text-secondary">{row.c != null ? `${row.c.toLocaleString('el-GR', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}:1` : '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -423,7 +471,7 @@ export function Agent360Content({ agentId }: Props) {
       {/* ── Quality Metrics ── */}
       {agentJourneys.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-text-primary mb-2">Quality Metrics (Δείκτες Ποιότητας)</h3>
+          <h3 className="text-sm font-semibold text-text-primary mb-2">Δείκτες Ποιότητας</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
@@ -436,11 +484,11 @@ export function Agent360Content({ agentId }: Props) {
               </thead>
               <tbody>
                 {[
-                  { label: 'Avg Reg → Excl', a: agentQuality.avg_days_reg_to_excl, o: officeQuality.avg_days_reg_to_excl, c: companyQuality.avg_days_reg_to_excl, suffix: 'd' },
-                  { label: 'Avg Excl → Offer', a: agentQuality.avg_days_excl_to_offer, o: officeQuality.avg_days_excl_to_offer, c: companyQuality.avg_days_excl_to_offer, suffix: 'd' },
-                  { label: 'Avg Offer → Close', a: agentQuality.avg_days_offer_to_closing, o: officeQuality.avg_days_offer_to_closing, c: companyQuality.avg_days_offer_to_closing, suffix: 'd' },
-                  { label: 'Avg Total Journey', a: agentQuality.avg_days_total_journey, o: officeQuality.avg_days_total_journey, c: companyQuality.avg_days_total_journey, suffix: 'd' },
-                  { label: 'Price Delta %', a: agentQuality.avg_price_delta_pct, o: officeQuality.avg_price_delta_pct, c: companyQuality.avg_price_delta_pct, suffix: '%' },
+                  { label: 'Μ.Ο. Καταγραφή → Ανάθεση', a: agentQuality.avg_days_reg_to_excl, o: officeQuality.avg_days_reg_to_excl, c: companyQuality.avg_days_reg_to_excl, suffix: 'd' },
+                  { label: 'Μ.Ο. Ανάθεση → Προσφορά', a: agentQuality.avg_days_excl_to_offer, o: officeQuality.avg_days_excl_to_offer, c: companyQuality.avg_days_excl_to_offer, suffix: 'd' },
+                  { label: 'Μ.Ο. Προσφορά → Κλείσιμο', a: agentQuality.avg_days_offer_to_closing, o: officeQuality.avg_days_offer_to_closing, c: companyQuality.avg_days_offer_to_closing, suffix: 'd' },
+                  { label: 'Μ.Ο. Συνολική Διαδρομή', a: agentQuality.avg_days_total_journey, o: officeQuality.avg_days_total_journey, c: companyQuality.avg_days_total_journey, suffix: 'd' },
+                  { label: 'Διαφορά Τιμής %', a: agentQuality.avg_price_delta_pct, o: officeQuality.avg_price_delta_pct, c: companyQuality.avg_price_delta_pct, suffix: '%' },
                 ].map(row => (
                   <tr key={row.label} className="border-b border-border-subtle">
                     <td className="py-1.5 pr-2 text-text-primary font-medium">{row.label}</td>
@@ -630,7 +678,7 @@ function TargetBar({ label, actual, target, color, formatter }: {
   return (
     <div className="bg-surface rounded-lg p-3 border border-border-subtle">
       <div className="flex items-baseline justify-between mb-1">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">{label}</span>
+        <span className="text-[10px] font-semibold tracking-wider text-text-muted">{label}</span>
         <span className="text-[10px] text-text-muted">{pct.toFixed(0)}%</span>
       </div>
       <div className="flex items-baseline gap-1.5 mb-2">

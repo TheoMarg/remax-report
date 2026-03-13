@@ -147,7 +147,7 @@ export function Office360Content({ office }: Props) {
             : kpi.color;
           return (
             <div key={kpi.label} className="bg-surface rounded-lg p-2.5 text-center border border-border-subtle">
-              <div className="text-[9px] font-semibold uppercase tracking-wider text-text-muted">{kpi.label}</div>
+              <div className="text-[9px] font-semibold tracking-wider text-text-muted">{kpi.label}</div>
               <div className="text-base font-bold mt-0.5" style={{ color: valueColor }}>{kpi.value}</div>
               {comp && comp.companyAvg > 0 && (
                 <div className="mt-1 space-y-0.5">
@@ -166,7 +166,7 @@ export function Office360Content({ office }: Props) {
 
       {/* ── Pipeline summary ── */}
       <div className="bg-surface rounded-lg p-3 border border-border-subtle">
-        <h3 className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-2">Pipeline</h3>
+        <h3 className="text-[10px] font-semibold tracking-wider text-text-muted mb-2">Pipeline</h3>
         <div className="flex items-center gap-6 text-sm">
           <div>
             <span className="text-text-muted text-xs">Ενεργά:</span>{' '}
@@ -182,7 +182,7 @@ export function Office360Content({ office }: Props) {
       {/* ── Conversion Rates ── */}
       {officeJourneys.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-text-primary mb-2">Conversion Rates (Ποσοστά Μετατροπής) — {ytdPeriod.label}</h3>
+          <h3 className="text-sm font-semibold text-text-primary mb-2">Ποσοστά Μετατροπής — {ytdPeriod.label}</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
@@ -194,19 +194,19 @@ export function Office360Content({ office }: Props) {
               </thead>
               <tbody>
                 {[
-                  { label: 'Reg → Excl', o: officeConv.reg_to_excl_pct, c: companyConv.reg_to_excl_pct },
-                  { label: 'Excl → Close', o: officeConv.excl_to_closing_pct, c: companyConv.excl_to_closing_pct },
-                  { label: 'Show → Offer', o: officeConv.showing_to_offer_pct, c: companyConv.showing_to_offer_pct },
-                  { label: 'Offer → Close', o: officeConv.offer_to_closing_pct, c: companyConv.offer_to_closing_pct },
+                  { label: 'Καταγραφή → Ανάθεση', o: officeConv.reg_to_excl, c: companyConv.reg_to_excl },
+                  { label: 'Ανάθεση → Κλείσιμο', o: officeConv.excl_to_closing, c: companyConv.excl_to_closing },
+                  { label: 'Υπόδειξη → Προσφορά', o: officeConv.showing_to_offer, c: companyConv.showing_to_offer },
+                  { label: 'Προσφορά → Κλείσιμο', o: officeConv.offer_to_closing, c: companyConv.offer_to_closing },
                 ].map(row => (
                   <tr key={row.label} className="border-b border-border-subtle">
                     <td className="py-1.5 pr-2 text-text-primary font-medium">{row.label}</td>
                     <td className={`py-1.5 px-2 text-right font-semibold tabular-nums ${
-                      row.o != null && row.c != null && row.o > row.c ? 'text-green-600' : row.o != null && row.c != null && row.o < row.c ? 'text-red-600' : ''
+                      row.o != null && row.c != null && row.o < row.c ? 'text-green-600' : row.o != null && row.c != null && row.o > row.c ? 'text-red-600' : ''
                     }`}>
-                      {row.o != null ? `${row.o}%` : '—'}
+                      {row.o != null ? `${row.o.toLocaleString('el-GR', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}:1` : '—'}
                     </td>
-                    <td className="py-1.5 pl-2 text-right tabular-nums text-text-secondary">{row.c != null ? `${row.c}%` : '—'}</td>
+                    <td className="py-1.5 pl-2 text-right tabular-nums text-text-secondary">{row.c != null ? `${row.c.toLocaleString('el-GR', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}:1` : '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -218,7 +218,7 @@ export function Office360Content({ office }: Props) {
       {/* ── Quality Metrics ── */}
       {officeJourneys.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-text-primary mb-2">Quality Metrics (Δείκτες Ποιότητας)</h3>
+          <h3 className="text-sm font-semibold text-text-primary mb-2">Δείκτες Ποιότητας</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
@@ -230,10 +230,10 @@ export function Office360Content({ office }: Props) {
               </thead>
               <tbody>
                 {[
-                  { label: 'Avg Reg → Excl', o: officeQuality.avg_days_reg_to_excl, c: companyQuality.avg_days_reg_to_excl, suffix: 'd' },
-                  { label: 'Avg Excl → Offer', o: officeQuality.avg_days_excl_to_offer, c: companyQuality.avg_days_excl_to_offer, suffix: 'd' },
-                  { label: 'Avg Total Journey', o: officeQuality.avg_days_total_journey, c: companyQuality.avg_days_total_journey, suffix: 'd' },
-                  { label: 'Price Delta %', o: officeQuality.avg_price_delta_pct, c: companyQuality.avg_price_delta_pct, suffix: '%' },
+                  { label: 'Μ.Ο. Καταγραφή → Ανάθεση', o: officeQuality.avg_days_reg_to_excl, c: companyQuality.avg_days_reg_to_excl, suffix: 'd' },
+                  { label: 'Μ.Ο. Ανάθεση → Προσφορά', o: officeQuality.avg_days_excl_to_offer, c: companyQuality.avg_days_excl_to_offer, suffix: 'd' },
+                  { label: 'Μ.Ο. Συνολική Διαδρομή', o: officeQuality.avg_days_total_journey, c: companyQuality.avg_days_total_journey, suffix: 'd' },
+                  { label: 'Διαφορά Τιμής %', o: officeQuality.avg_price_delta_pct, c: companyQuality.avg_price_delta_pct, suffix: '%' },
                 ].map(row => (
                   <tr key={row.label} className="border-b border-border-subtle">
                     <td className="py-1.5 pr-2 text-text-primary font-medium">{row.label}</td>

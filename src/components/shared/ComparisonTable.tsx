@@ -12,6 +12,7 @@ interface Props {
   entityLabel?: string;
   showTeam?: boolean;
   formatValue?: (val: number | string | null) => string;
+  invertColor?: boolean;  // true = lower is better (for ratios)
 }
 
 function defaultFormat(val: number | string | null): string {
@@ -36,6 +37,7 @@ export function ComparisonTable({
   entityLabel = 'Entity',
   showTeam = true,
   formatValue = defaultFormat,
+  invertColor = false,
 }: Props) {
   return (
     <div className="card-premium overflow-hidden">
@@ -47,7 +49,7 @@ export function ComparisonTable({
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-surface-light text-text-muted text-xs uppercase tracking-wider">
+            <tr className="bg-surface-light text-text-muted text-xs tracking-wider">
               <th className="text-left px-4 py-2.5">Metric</th>
               <th className="text-right px-4 py-2.5 text-brand-blue">{entityLabel}</th>
               {showTeam && <th className="text-right px-4 py-2.5 text-brand-purple">Team</th>}
@@ -59,7 +61,7 @@ export function ComparisonTable({
             {rows.map((row, i) => (
               <tr key={i} className="border-t border-border-subtle">
                 <td className="px-4 py-2.5 text-text-primary font-medium">{row.label}</td>
-                <td className={`px-4 py-2.5 text-right font-semibold ${cellColor(row.entity, row.company)}`}>
+                <td className={`px-4 py-2.5 text-right font-semibold ${invertColor ? cellColor(row.company, row.entity) : cellColor(row.entity, row.company)}`}>
                   {formatValue(row.entity)}
                 </td>
                 {showTeam && (

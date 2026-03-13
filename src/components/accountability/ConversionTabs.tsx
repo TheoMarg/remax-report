@@ -12,7 +12,7 @@ function safePct(num: number, den: number): number | null {
 
 function safeRatio(num: number, den: number): number | null {
   if (den === 0) return null;
-  return Math.round((num / den) * 10) / 10;
+  return Math.round((num / den) * 100) / 100;
 }
 
 interface ConversionMetrics {
@@ -55,9 +55,9 @@ function computeConversions(
 
   return {
     leadsToReg: safePct(reg, totalLeads > 0 ? totalLeads : reg), // fallback if no activity data
-    showingToOffer: safePct(offers, show),
-    regToExcl: safePct(excl, reg),
-    exclToClosing: safePct(closings, excl),
+    showingToOffer: safeRatio(show, offers),
+    regToExcl: safeRatio(reg, excl),
+    exclToClosing: safeRatio(excl, closings),
     leadsPer100Calls: totalCalls > 0 ? safeRatio(totalLeads * 100, totalCalls) : null,
     marketingScore: totalMarketing,
     followUpIntensity: totalFollowUp,
@@ -143,7 +143,7 @@ export function ConversionTabs({ metrics, activity, selectedAgent, agents }: Pro
     if (activeTab === 'demand') {
       return [
         {
-          label: 'Showing → Offer %',
+          label: 'Υπόδειξη → Προσφορά',
           entity: entity.showingToOffer,
           office: office.showingToOffer,
           company: company.showingToOffer,
@@ -153,13 +153,13 @@ export function ConversionTabs({ metrics, activity, selectedAgent, agents }: Pro
     if (activeTab === 'supply') {
       return [
         {
-          label: 'Registration → Exclusive %',
+          label: 'Καταγραφή → Ανάθεση',
           entity: entity.regToExcl,
           office: office.regToExcl,
           company: company.regToExcl,
         },
         {
-          label: 'Exclusive → Closing %',
+          label: 'Ανάθεση → Κλείσιμο',
           entity: entity.exclToClosing,
           office: office.exclToClosing,
           company: company.exclToClosing,
@@ -189,12 +189,12 @@ export function ConversionTabs({ metrics, activity, selectedAgent, agents }: Pro
     ];
   }, [activeTab, entity, office, company]);
 
-  const entityLabel = selectedAgent === 'all' ? 'Company' : 'Agent';
+  const entityLabel = selectedAgent === 'all' ? 'Εταιρεία' : 'Σύμβουλος';
 
   return (
     <div className="card-premium p-5">
       <h3 className="text-sm font-semibold text-text-primary mb-4">
-        Conversion Rates (Ρυθμοί Μετατροπής)
+        Αναλογίες Μετατροπής
       </h3>
 
       {/* Tabs */}
@@ -218,9 +218,16 @@ export function ConversionTabs({ metrics, activity, selectedAgent, agents }: Pro
         rows={rows}
         entityLabel={entityLabel}
         showTeam={false}
+        invertColor={activeTab === 'demand' || activeTab === 'supply'}
         formatValue={(val) => {
           if (val === null || val === undefined) return '—';
-          if (typeof val === 'number') return val.toLocaleString('el-GR');
+          if (typeof val === 'number') {
+            // Demand/Supply tabs show ratios (X:1), Efficiency shows plain numbers
+            if (activeTab === 'demand' || activeTab === 'supply') {
+              return `${val.toLocaleString('el-GR', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}:1`;
+            }
+            return val.toLocaleString('el-GR');
+          }
           return String(val);
         }}
       />

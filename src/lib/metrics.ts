@@ -148,6 +148,9 @@ export function computeKpis(metrics: CombinedMetric[]): KpiSummary[] {
     exclusives:    { sale: 'crm_exclusives_sale',    rent: 'crm_exclusives_rent' },
     published:     { sale: 'crm_published_sale',     rent: 'crm_published_rent' },
     showings:      { sale: 'crm_showings_sale',      rent: 'crm_showings_rent' },
+    offers:        { sale: 'crm_offers_sale',        rent: 'crm_offers_rent' },
+    closings:      { sale: 'crm_closings_sale',      rent: 'crm_closings_rent' },
+    billing:       { sale: 'crm_billing_sale',       rent: 'crm_billing_rent' },
   };
 
   // Team metrics (is_team rows)
@@ -335,10 +338,13 @@ export function rankAgentsByKpi(
   const accKey = accField as keyof CombinedMetric | null;
 
   const saleRentMap: Record<string, { sale: string; rent: string }> = {
-    crm_exclusives:    { sale: 'crm_exclusives_sale',    rent: 'crm_exclusives_rent' },
     crm_registrations: { sale: 'crm_registrations_sale', rent: 'crm_registrations_rent' },
+    crm_exclusives:    { sale: 'crm_exclusives_sale',    rent: 'crm_exclusives_rent' },
     crm_published:     { sale: 'crm_published_sale',     rent: 'crm_published_rent' },
     crm_showings:      { sale: 'crm_showings_sale',      rent: 'crm_showings_rent' },
+    crm_offers:        { sale: 'crm_offers_sale',        rent: 'crm_offers_rent' },
+    crm_closings:      { sale: 'crm_closings_sale',      rent: 'crm_closings_rent' },
+    crm_billing:       { sale: 'crm_billing_sale',       rent: 'crm_billing_rent' },
   };
   const sr = saleRentMap[crmField];
   const hasSaleRent = !!sr;
