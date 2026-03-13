@@ -1,12 +1,12 @@
 import type { StageFlowResult, StageName } from '../../hooks/useStageFlow';
 
 const STAGE_LABELS: Record<StageName, string> = {
-  registration: 'Καταγραφές',
-  exclusive: 'Αποκλειστικές',
-  published: 'Δημοσιευμένα',
-  showing: 'Υποδείξεις',
-  offer: 'Προσφορές',
-  closing: 'Κλεισίματα',
+  registration: 'Registration (Καταγραφές)',
+  exclusive: 'Exclusive (Αποκλειστικές)',
+  published: 'Published (Δημοσιευμένα)',
+  showing: 'Showing (Υποδείξεις)',
+  offer: 'Offer (Προσφορές)',
+  closing: 'Closing (Κλεισίματα)',
 };
 
 const STAGE_COLORS: Record<StageName, string> = {
@@ -64,16 +64,23 @@ export function PipelineFlowHeader({ flows, activeStage, onStageClick }: Props) 
             </button>
 
             {/* Arrow connector */}
-            {nextFlow && (
-              <div className="flex flex-col items-center justify-center w-10 shrink-0">
-                <div className="text-[9px] font-bold text-text-muted mb-0.5">
-                  {flow.conversion_pct != null ? `${flow.conversion_pct}%` : '—'}
+            {nextFlow && (() => {
+              const maxInflow = Math.max(...flows.map(f => f.inflow), 1);
+              const thickness = Math.max(1.5, Math.min(4, (flow.outflow / maxInflow) * 5));
+              return (
+                <div className="flex flex-col items-center justify-center w-10 shrink-0">
+                  <div className="text-[9px] font-bold text-text-muted mb-0.5">
+                    {flow.conversion_pct != null ? `${flow.conversion_pct}%` : '—'}
+                  </div>
+                  <svg width="24" height="12" viewBox="0 0 24 12" style={{ color: STAGE_COLORS[flow.stage] }}>
+                    <path d="M0 6h18m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth={thickness} fill="none" strokeLinecap="round" strokeLinejoin="round" opacity={0.5} />
+                  </svg>
+                  <div className="text-[8px] text-brand-red mt-0.5">
+                    -{flow.dropout}
+                  </div>
                 </div>
-                <svg width="24" height="12" viewBox="0 0 24 12" className="text-border-default">
-                  <path d="M0 6h18m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-            )}
+              );
+            })()}
           </div>
         );
       })}

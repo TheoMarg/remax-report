@@ -5,6 +5,7 @@ import { useMetrics } from '../hooks/useMetrics';
 import { computeKpis, computeOfficeComparison, computeCrmVsAccSummary, computeGciRankings, KPI_DEFS, rankAgentsByKpi } from '../lib/metrics';
 import { AnimatedSection } from '../components/animations/AnimatedSection';
 import { ExportPdfButton } from '../components/export/ExportPdfButton';
+import { RevenueForecast } from '../components/reports/RevenueForecast';
 
 const OFFICE_SHORT: Record<string, string> = { larissa: 'Λάρισα', katerini: 'Κατερίνη' };
 
@@ -24,6 +25,7 @@ const REPORT_SECTIONS = [
   { key: 'rankings', label: 'Agent Rankings ανά KPI' },
   { key: 'gci', label: 'GCI Rankings' },
   { key: 'crmVsAcc', label: 'CRM vs Accountability' },
+  { key: 'forecast', label: 'Revenue Forecast' },
 ] as const;
 
 type SectionKey = typeof REPORT_SECTIONS[number]['key'];
@@ -82,7 +84,7 @@ export function Reports({ period }: Props) {
             <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-white/60 bg-white/10 px-2.5 py-1 rounded-full mb-3">
               Reports
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold">Custom Report</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold">Custom Report (Αναφορά)</h2>
             <p className="text-white/60 text-sm mt-1">{period.label} — Operations Manager</p>
           </div>
           <ExportPdfButton elementId="report-content" filename={`report-${period.label}.pdf`} />
@@ -277,6 +279,18 @@ export function Reports({ period }: Props) {
                   </tbody>
                 </table>
               </div>
+            </div>
+          </AnimatedSection>
+        )}
+
+        {/* Revenue Forecast */}
+        {selectedSections.has('forecast') && (
+          <AnimatedSection delay={0.4}>
+            <div className="card-premium p-5">
+              <h3 className="text-sm font-semibold text-text-primary mb-4">
+                Revenue Forecast (Πρόβλεψη Εσόδων)
+              </h3>
+              <RevenueForecast />
             </div>
           </AnimatedSection>
         )}

@@ -9,19 +9,19 @@ interface NavItem {
 }
 
 const PAGES: NavItem[] = [
-  { key: 'overview',            label: 'Overview' },
-  { key: 'pipeline',            label: 'Pipeline' },
-  { key: 'kpis',                label: 'KPIs' },
-  { key: 'leaderboard',         label: 'Leaderboard' },
+  { key: 'overview',            label: 'Overview (Σύνοψη)' },
+  { key: 'pipeline',            label: 'Pipeline (Ροή)' },
+  { key: 'kpis',                label: 'KPIs (Δείκτες)' },
+  { key: 'leaderboard',         label: 'Leaderboard (Κατάταξη)' },
   { key: 'portfolio-published', label: 'Portfolio', group: 'Published' },
   { key: 'portfolio-quality',   label: 'Quality', group: 'PQS' },
-  { key: 'pricing',             label: 'Pricing' },
-  { key: 'accountability',      label: 'Accountability' },
-  { key: 'withdrawals',         label: 'Withdrawals' },
-  { key: 'agent-profile',       label: 'Agent Profile' },
-  { key: 'insights',            label: 'Insights' },
-  { key: 'reports',             label: 'Reports', requireRole: ['ops_mgr'] },
-  { key: 'settings',            label: 'Settings', requireRole: ['ops_mgr'] },
+  { key: 'pricing',             label: 'Pricing (Τιμολόγηση)' },
+  { key: 'accountability',      label: 'Accountability (Λογοδοσία)' },
+  { key: 'withdrawals',         label: 'Withdrawals (Αποσύρσεις)' },
+  { key: 'agent-profile',       label: 'Agent Profile (Προφίλ)' },
+  { key: 'insights',            label: 'Insights (Αναλύσεις)' },
+  { key: 'reports',             label: 'Reports (Αναφορές)', requireRole: ['ops_mgr'] },
+  { key: 'settings',            label: 'Settings (Ρυθμίσεις)', requireRole: ['ops_mgr'] },
 ];
 
 interface Props {

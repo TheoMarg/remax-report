@@ -69,7 +69,7 @@ export function KPIDetail({ period }: Props) {
               </span>
             </div>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight">
-              KPIs Αναλυτικα
+              KPI Detail (Αναλυτικοί Δείκτες)
             </h2>
             <p className="text-lg sm:text-xl font-light text-white/80 mt-1">
               {period.label}

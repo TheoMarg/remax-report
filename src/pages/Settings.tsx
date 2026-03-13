@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import type { Period } from '../lib/types';
 import { useKpiWeights } from '../hooks/useKpiWeights';
 import { usePqsWeights } from '../hooks/usePqsWeights';
+import { useSubcategoryWeights } from '../hooks/useSubcategoryWeights';
 import { useMetrics } from '../hooks/useMetrics';
 import { useAgents } from '../hooks/useAgents';
 import { usePortfolioQuality } from '../hooks/usePortfolioQuality';
@@ -35,13 +36,15 @@ interface Props {
 export function Settings({ period }: Props) {
   const { data: kpiWeights = [], updateWeights: updateKpi, isUpdating: kpiUpdating } = useKpiWeights();
   const { data: pqsWeights = [], updateWeights: updatePqs, isUpdating: pqsUpdating } = usePqsWeights();
+  const { data: subcatWeights = [], updateWeights: updateSubcat, isUpdating: subcatUpdating } = useSubcategoryWeights();
   const { data: allMetrics = [] } = useMetrics(period);
   const { data: agents = [] } = useAgents();
   const { data: qualityData = [] } = usePortfolioQuality();
 
   const [kpiDraft, setKpiDraft] = useState<Record<string, number>>({});
   const [pqsDraft, setPqsDraft] = useState<Record<string, number>>({});
-  const [saved, setSaved] = useState<'kpi' | 'pqs' | null>(null);
+  const [subcatDraft, setSubcatDraft] = useState<Record<string, { weight: number; notes: string }>>({});
+  const [saved, setSaved] = useState<'kpi' | 'pqs' | 'subcat' | null>(null);
 
   // Initialize drafts from DB
   useEffect(() => {
@@ -59,6 +62,16 @@ export function Settings({ period }: Props) {
       setPqsDraft(draft);
     }
   }, [pqsWeights]);
+
+  useEffect(() => {
+    if (subcatWeights.length > 0 && Object.keys(subcatDraft).length === 0) {
+      const draft: Record<string, { weight: number; notes: string }> = {};
+      for (const w of subcatWeights) {
+        draft[w.subcategory] = { weight: w.weight, notes: w.notes ?? '' };
+      }
+      setSubcatDraft(draft);
+    }
+  }, [subcatWeights]);
 
   // Preview rankings with draft weights
   const startDates = useMemo(() => {
@@ -98,6 +111,25 @@ export function Settings({ period }: Props) {
     const updates = Object.entries(pqsDraft).map(([metric_key, weight]) => ({ metric_key, weight }));
     await updatePqs(updates);
     setSaved('pqs');
+    setTimeout(() => setSaved(null), 2000);
+  }
+
+  const hasSubcatChanges = useMemo(() => {
+    return subcatWeights.some(w => {
+      const d = subcatDraft[w.subcategory];
+      return d && (d.weight !== w.weight || d.notes !== (w.notes ?? ''));
+    });
+  }, [subcatWeights, subcatDraft]);
+
+  async function handleSaveSubcat() {
+    const updates = Object.entries(subcatDraft).map(([subcategory, d]) => ({
+      subcategory,
+      transaction_type: null,
+      weight: d.weight,
+      notes: d.notes || null,
+    }));
+    await updateSubcat(updates);
+    setSaved('subcat');
     setTimeout(() => setSaved(null), 2000);
   }
 
@@ -247,6 +279,85 @@ export function Settings({ period }: Props) {
           </div>
         </AnimatedSection>
       </div>
+
+      {/* ═══ Subcategory Weights ═══ */}
+      {subcatWeights.length > 0 && (
+        <AnimatedSection delay={0.2}>
+          <div className="card-premium p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-sm font-semibold text-text-primary">
+                  Subcategory Weights (Κατεύθυνση Χαρτοφυλακίου — Office-Directed PQS)
+                </h3>
+                <p className="text-xs text-text-muted mt-1">
+                  Αυξήστε τα weights σε κατηγορίες που θέλετε να ενθαρρύνετε. Οι agents με ακίνητα σε αυτές τις κατηγορίες θα ανεβαίνουν στο ranking.
+                </p>
+              </div>
+              <button
+                onClick={handleSaveSubcat}
+                disabled={!hasSubcatChanges || subcatUpdating}
+                className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                  hasSubcatChanges
+                    ? 'bg-brand-gold text-white hover:bg-brand-gold/90'
+                    : 'bg-surface-light text-text-muted cursor-not-allowed'
+                }`}
+              >
+                {subcatUpdating ? 'Saving...' : saved === 'subcat' ? 'Saved!' : 'Save'}
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-surface-light text-text-muted text-[10px] uppercase tracking-wider">
+                    <th className="text-left px-3 py-2">Subcategory</th>
+                    <th className="text-center px-3 py-2">Weight</th>
+                    <th className="text-left px-3 py-2">Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(subcatDraft).map(([subcat, d]) => (
+                    <tr key={subcat} className="border-t border-border-subtle">
+                      <td className="px-3 py-2 font-medium text-text-primary">{subcat}</td>
+                      <td className="px-3 py-2">
+                        <div className="flex items-center gap-2 justify-center">
+                          <input
+                            type="range"
+                            min="0"
+                            max="5"
+                            step="0.5"
+                            value={d.weight}
+                            onChange={e => setSubcatDraft(prev => ({
+                              ...prev,
+                              [subcat]: { ...prev[subcat], weight: parseFloat(e.target.value) },
+                            }))}
+                            className="w-24 accent-brand-gold"
+                          />
+                          <span className="text-xs font-bold text-brand-gold tabular-nums w-8 text-right">
+                            {d.weight.toFixed(1)}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2">
+                        <input
+                          type="text"
+                          value={d.notes}
+                          onChange={e => setSubcatDraft(prev => ({
+                            ...prev,
+                            [subcat]: { ...prev[subcat], notes: e.target.value },
+                          }))}
+                          placeholder="—"
+                          className="text-xs w-full bg-transparent border-b border-border-subtle focus:border-brand-gold outline-none py-0.5 text-text-primary"
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </AnimatedSection>
+      )}
     </div>
   );
 }

@@ -11,7 +11,7 @@ export function SalesFunnel({ steps }: Props) {
     <div className="card-premium p-5">
       <div className="flex items-center gap-2 mb-5">
         <div className="w-7 h-7 rounded-lg bg-brand-blue/10 flex items-center justify-center text-sm">🔻</div>
-        <h3 className="text-sm font-bold text-text-primary">Funnel Πωλήσεων</h3>
+        <h3 className="text-sm font-bold text-text-primary">Sales Funnel (Χωνί Πωλήσεων)</h3>
       </div>
       <div className="space-y-3">
         {steps.map((step) => {

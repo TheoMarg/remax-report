@@ -40,12 +40,17 @@ function computeStageKPIs(
         ? stageJourneys.reduce((s, j) => s + (j.size_sqm || 0), 0) / stageJourneys.filter(j => j.size_sqm).length
         : null;
       const withExcl = stageJourneys.filter(j => j.has_exclusive).length;
+      const withoutExcl = stageJourneys.filter(j => !j.has_exclusive).length;
+      const avgDaysNoExcl = withoutExcl > 0
+        ? Math.round(withoutExcl) // count of those stuck without exclusive
+        : null;
       return [
-        { label: 'Καταγραφές', value: fmt(flow.inflow), color: '#1B5299' },
-        { label: 'Πώληση / Ενοικ.', value: `${sale} / ${rent}` },
-        { label: '→ Αποκλειστικές', value: fmt(withExcl), sub: fmtPct(flow.conversion_pct), color: '#168F80' },
-        { label: 'Μ.Ο. Τιμής', value: fmtEur(avgPrice ? Math.round(avgPrice) : null) },
-        { label: 'Μ.Ο. m²', value: avgSqm ? `${Math.round(avgSqm)} τ.μ.` : '—' },
+        { label: 'Registrations (Καταγραφές)', value: fmt(flow.inflow), color: '#1B5299' },
+        { label: 'Sale / Rent (Πώλ./Ενοικ.)', value: `${sale} / ${rent}`, sub: sale + rent > 0 ? `${Math.round(sale / (sale + rent) * 100)}% sale` : undefined },
+        { label: '→ Exclusives (Αποκλ.)', value: fmt(withExcl), sub: fmtPct(flow.conversion_pct), color: '#168F80' },
+        { label: 'Avg Price (Μ.Ο. Τιμής)', value: fmtEur(avgPrice ? Math.round(avgPrice) : null) },
+        { label: 'Avg m² (Μ.Ο. m²)', value: avgSqm ? `${Math.round(avgSqm)} τ.μ.` : '—' },
+        { label: 'No Exclusive (Χωρίς Αποκλ.)', value: fmt(avgDaysNoExcl), color: '#D4722A' },
       ];
     }
     case 'exclusive': {
@@ -55,12 +60,13 @@ function computeStageKPIs(
         : null;
       const dormant = stageJourneys.filter(j => j.has_exclusive && !j.has_showing).length;
       const withShowing = stageJourneys.filter(j => j.has_showing).length;
+      const captureRate = flow.inflow > 0 ? Math.round(flow.inflow / stageJourneys.length * 100) : null;
       return [
-        { label: 'Αποκλειστικές', value: fmt(flow.inflow), color: '#168F80' },
-        { label: '← Από Καταγραφή', value: fmtPct(flow.conversion_pct) },
-        { label: '→ Υπόδειξη', value: fmt(withShowing), sub: `${stageJourneys.length > 0 ? Math.round(withShowing / stageJourneys.length * 100) : 0}%`, color: '#6B5CA5' },
-        { label: 'Μ.Ο. Ημέρες Capture', value: avgCapture != null ? `${avgCapture}d` : '—' },
-        { label: 'Dormant', value: fmt(dormant), color: '#D4722A' },
+        { label: 'Exclusives (Αποκλειστικές)', value: fmt(flow.inflow), color: '#168F80' },
+        { label: 'Capture Rate (Excl/Reg)', value: fmtPct(captureRate) },
+        { label: '→ Showing (Υπόδειξη)', value: fmt(withShowing), sub: `${stageJourneys.length > 0 ? Math.round(withShowing / stageJourneys.length * 100) : 0}%`, color: '#6B5CA5' },
+        { label: 'Avg Days Capture (Μ.Ο. Ημ.)', value: avgCapture != null ? `${avgCapture}d` : '—' },
+        { label: 'Dormant (Αδρανή)', value: fmt(dormant), sub: 'no showing', color: '#D4722A' },
       ];
     }
     case 'showing': {
@@ -69,12 +75,14 @@ function computeStageKPIs(
       const avgPerProp = stageJourneys.length > 0
         ? Math.round(totalShowings / stageJourneys.length * 10) / 10 : null;
       const withOffer = stageJourneys.filter(j => j.has_offer).length;
+      const coldProps = stageJourneys.filter(j => j.has_showing && j.days_on_market != null && j.days_on_market > 30 && j.total_showings <= 1).length;
       return [
-        { label: 'Ακίνητα με Υπόδειξη', value: fmt(flow.inflow), color: '#6B5CA5' },
-        { label: 'Σύνολο Υποδείξεων', value: fmt(totalShowings) },
-        { label: 'Υποδ./Ακίνητο', value: avgPerProp != null ? `${avgPerProp}` : '—' },
-        { label: 'Μοναδικοί Πελάτες', value: fmt(uniqueClients) },
-        { label: '→ Προσφορά', value: fmt(withOffer), sub: fmtPct(flow.conversion_pct), color: '#C9961A' },
+        { label: 'Properties w/ Showings (Ακίνητα)', value: fmt(flow.inflow), color: '#6B5CA5' },
+        { label: 'Total Showings (Σύνολο)', value: fmt(totalShowings) },
+        { label: 'Showings/Property (Υποδ./Ακ.)', value: avgPerProp != null ? `${avgPerProp}` : '—' },
+        { label: 'Unique Clients (Πελάτες)', value: fmt(uniqueClients) },
+        { label: '→ Offer (Προσφορά)', value: fmt(withOffer), sub: fmtPct(flow.conversion_pct), color: '#C9961A' },
+        { label: 'Cold Properties (Ψυχρά)', value: fmt(coldProps), sub: '>30d, ≤1 showing', color: '#DC3545' },
       ];
     }
     case 'offer': {
@@ -87,12 +95,14 @@ function computeStageKPIs(
       const showingsNeeded = stageJourneys.length > 0
         ? Math.round(stageJourneys.reduce((s, j) => s + j.total_showings, 0) / stageJourneys.length * 10) / 10
         : null;
+      const multipleOffers = stageJourneys.filter(j => j.has_offer && j.total_showings > 3).length;
       return [
-        { label: 'Προσφορές', value: fmt(flow.inflow), color: '#C9961A' },
-        { label: '→ Κλείσιμο', value: fmt(withClosing), sub: fmtPct(flow.conversion_pct), color: '#D4722A' },
-        { label: 'Fallthrough', value: fmt(fallthrough), color: '#C0392B' },
-        { label: 'Μ.Ο. Ημέρες Excl→Offer', value: avgDays != null ? `${avgDays}d` : '—' },
-        { label: 'Υποδ. ανά Προσφ.', value: showingsNeeded != null ? `${showingsNeeded}` : '—' },
+        { label: 'Offers (Προσφορές)', value: fmt(flow.inflow), color: '#C9961A' },
+        { label: '→ Closing (Κλείσιμο)', value: fmt(withClosing), sub: fmtPct(flow.conversion_pct), color: '#D4722A' },
+        { label: 'Fallthrough (Αποτυχία)', value: fmt(fallthrough), color: '#C0392B' },
+        { label: 'Avg Days Excl→Offer (Μ.Ο. Ημ.)', value: avgDays != null ? `${avgDays}d` : '—' },
+        { label: 'Showings/Offer (Υποδ./Προσφ.)', value: showingsNeeded != null ? `${showingsNeeded}` : '—' },
+        { label: 'High Interest (Πολλές Υποδ.)', value: fmt(multipleOffers), sub: '>3 showings' },
       ];
     }
     case 'closing': {
@@ -106,12 +116,14 @@ function computeStageKPIs(
         ? Math.round(avgDom.reduce((s, j) => s + j.days_total_journey!, 0) / avgDom.length)
         : null;
       const avgGciPerDeal = stageJourneys.length > 0 ? Math.round(totalGci / stageJourneys.length) : null;
+      const gciPerDay = avgDays && avgDays > 0 && avgGciPerDeal ? Math.round(avgGciPerDeal / avgDays) : null;
       return [
-        { label: 'Κλεισίματα', value: fmt(flow.inflow), color: '#D4722A' },
-        { label: 'Σύνολο GCI', value: fmtEur(totalGci), color: '#C9961A' },
+        { label: 'Closings (Κλεισίματα)', value: fmt(flow.inflow), color: '#D4722A' },
+        { label: 'Total GCI (Σύνολο)', value: fmtEur(totalGci), color: '#C9961A' },
         { label: 'GCI / Deal', value: fmtEur(avgGciPerDeal) },
-        { label: 'Price Δ%', value: avgPriceDelta != null ? `${avgPriceDelta > 0 ? '+' : ''}${avgPriceDelta}%` : '—' },
-        { label: 'Μ.Ο. Ημέρες', value: avgDays != null ? `${avgDays}d` : '—' },
+        { label: 'GCI / Day on Market', value: gciPerDay ? fmtEur(gciPerDay) + '/d' : '—' },
+        { label: 'Price Delta (Δ%)', value: avgPriceDelta != null ? `${avgPriceDelta > 0 ? '+' : ''}${avgPriceDelta}%` : '—' },
+        { label: 'Avg DOM (Μ.Ο. Ημέρες)', value: avgDays != null ? `${avgDays}d` : '—' },
       ];
     }
     default:
@@ -132,7 +144,7 @@ export function PipelineStageKPIs({ stage, flow, journeys, stageJourneys }: Prop
   const kpis = computeStageKPIs(stage, flow, journeys, stageJourneys);
 
   return (
-    <div className="grid grid-cols-5 gap-2">
+    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
       {kpis.map(kpi => (
         <div key={kpi.label} className="bg-surface rounded-lg p-3 border border-border-subtle text-center">
           <div className="text-[9px] font-semibold uppercase tracking-wider text-text-muted">{kpi.label}</div>

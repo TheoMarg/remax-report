@@ -12,7 +12,9 @@ import { useKpiWeights } from '../hooks/useKpiWeights';
 import { usePqsWeights } from '../hooks/usePqsWeights';
 import { useWeightedScores } from '../hooks/useWeightedScores';
 import { usePortfolioScores, type PqsResult } from '../hooks/usePortfolioScores';
+import { useMarketability } from '../hooks/useMarketability';
 import { EntityLink } from '../components/shared/EntityLink';
+import type { MarketBenchmark, MarketPqsResult } from '../lib/marketability';
 
 type OfficeFilter = 'all' | 'larissa' | 'katerini';
 
@@ -33,14 +35,18 @@ interface Props {
   period: Period;
 }
 
+type PqsMode = 'standard' | 'market' | 'directed';
+
 export function PortfolioQualityPage({ period }: Props) {
   const [officeFilter, setOfficeFilter] = useState<OfficeFilter>('all');
+  const [pqsMode, setPqsMode] = useState<PqsMode>('standard');
 
   const { data: allMetrics = [] } = useMetrics(period);
   const { data: agents = [] } = useAgents();
   const { data: qualityData = [] } = usePortfolioQuality();
   const { data: kpiWeights = [] } = useKpiWeights();
   const { data: pqsWeights = [] } = usePqsWeights();
+  const { marketAdjusted, officeDirected, benchmarks, isReady: marketReady } = useMarketability();
 
   // Build start dates for rookie detection
   const startDates = useMemo(() => {
@@ -92,26 +98,50 @@ export function PortfolioQualityPage({ period }: Props) {
   return (
     <div className="max-w-[1600px] mx-auto px-6 py-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-semibold text-text-primary">
-          Portfolio Quality
+          Portfolio Quality — PQS (Δείκτης Ποιότητας)
           <span className="text-sm font-normal text-text-muted ml-3">{period.label}</span>
         </h2>
-        {/* Office filter */}
-        <div className="flex gap-1 bg-surface-light rounded-lg p-0.5">
-          {([['all', 'All'], ['larissa', 'Larissa'], ['katerini', 'Katerini']] as [OfficeFilter, string][]).map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => setOfficeFilter(key)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                officeFilter === key
-                  ? 'bg-surface-card text-brand-blue shadow-sm'
-                  : 'text-text-muted hover:text-text-primary'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+        <div className="flex items-center gap-3">
+          {/* PQS Mode toggle */}
+          {marketReady && (
+            <div className="flex gap-0.5 bg-surface-light rounded-lg p-0.5">
+              {([
+                ['standard', 'Standard'],
+                ['market', 'Market-Adj.'],
+                ['directed', 'Office-Dir.'],
+              ] as [PqsMode, string][]).map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => setPqsMode(key)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                    pqsMode === key
+                      ? 'bg-surface-card text-brand-teal shadow-sm'
+                      : 'text-text-muted hover:text-text-primary'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+          {/* Office filter */}
+          <div className="flex gap-1 bg-surface-light rounded-lg p-0.5">
+            {([['all', 'All'], ['larissa', 'Larissa'], ['katerini', 'Katerini']] as [OfficeFilter, string][]).map(([key, label]) => (
+              <button
+                key={key}
+                onClick={() => setOfficeFilter(key)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                  officeFilter === key
+                    ? 'bg-surface-card text-brand-blue shadow-sm'
+                    : 'text-text-muted hover:text-text-primary'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -237,6 +267,37 @@ export function PortfolioQualityPage({ period }: Props) {
         </h3>
         <QualityHeatmap results={pqsResults} />
       </div>
+
+      {/* Section 5: Marketability Heatmap */}
+      {marketReady && Object.keys(benchmarks).length > 0 && (
+        <div className="bg-surface-card rounded-xl border border-border-default p-5">
+          <h3 className="text-sm font-semibold text-text-primary mb-1">
+            Marketability Heatmap (Εμπορευσιμότητα ανά Κατηγορία)
+          </h3>
+          <p className="text-xs text-text-muted mb-4">
+            Market benchmarks per subcategory — DOM, Conversion %, Price Reductions, Sample Size
+          </p>
+          <MarketabilityHeatmap benchmarks={benchmarks} />
+        </div>
+      )}
+
+      {/* Section 6: Market-Adjusted or Office-Directed Leaderboard */}
+      {pqsMode !== 'standard' && (
+        <div className="bg-surface-card rounded-xl border border-border-default p-5">
+          <h3 className="text-sm font-semibold text-text-primary mb-4">
+            {pqsMode === 'market'
+              ? 'Market-Adjusted PQS (Αντικειμενικό)'
+              : 'Office-Directed PQS (Στρατηγικό)'}
+          </h3>
+          <MarketPqsLeaderboard
+            results={
+              (pqsMode === 'market' ? marketAdjusted : officeDirected)
+                .filter(r => officeFilter === 'all' || r.office === officeFilter)
+            }
+            mode={pqsMode}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -375,6 +436,128 @@ function QualityHeatmap({ results }: { results: PqsResult[] }) {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+/* ── Marketability Heatmap ── */
+
+function marketHeatColor(val: number, type: 'dom' | 'conv' | 'red'): string {
+  if (type === 'dom') {
+    if (val <= 30) return 'bg-emerald-500/20 text-brand-green';
+    if (val <= 90) return 'bg-yellow-500/20 text-yellow-600';
+    return 'bg-red-500/20 text-brand-red';
+  }
+  if (type === 'conv') {
+    if (val >= 20) return 'bg-emerald-500/20 text-brand-green';
+    if (val >= 10) return 'bg-yellow-500/20 text-yellow-600';
+    return 'bg-red-500/20 text-brand-red';
+  }
+  // reductions: lower is better
+  if (val <= 0.5) return 'bg-emerald-500/20 text-brand-green';
+  if (val <= 1.5) return 'bg-yellow-500/20 text-yellow-600';
+  return 'bg-red-500/20 text-brand-red';
+}
+
+function MarketabilityHeatmap({ benchmarks }: { benchmarks: Record<string, MarketBenchmark> }) {
+  const sorted = Object.values(benchmarks).sort((a, b) => b.sample_count - a.sample_count);
+
+  if (sorted.length === 0) {
+    return <p className="text-xs text-text-muted italic">No benchmarks available</p>;
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="border-b border-border-subtle">
+            <th className="text-left py-2 px-2 text-text-muted font-medium">Subcategory</th>
+            <th className="text-center py-2 px-2 text-text-muted font-medium">Avg DOM</th>
+            <th className="text-center py-2 px-2 text-text-muted font-medium">Conv %</th>
+            <th className="text-center py-2 px-2 text-text-muted font-medium">Avg Reductions</th>
+            <th className="text-center py-2 px-2 text-text-muted font-medium">Sample</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sorted.map(b => (
+            <tr key={b.subcategory} className="border-b border-border-subtle hover:bg-surface-light">
+              <td className="py-2 px-2 font-medium text-text-primary">{b.subcategory}</td>
+              <td className="py-2 px-2 text-center">
+                <span className={`inline-block px-2 py-0.5 rounded font-semibold tabular-nums ${marketHeatColor(b.avg_dom, 'dom')}`}>
+                  {b.avg_dom}d
+                </span>
+              </td>
+              <td className="py-2 px-2 text-center">
+                <span className={`inline-block px-2 py-0.5 rounded font-semibold tabular-nums ${marketHeatColor(b.conversion_rate, 'conv')}`}>
+                  {b.conversion_rate}%
+                </span>
+              </td>
+              <td className="py-2 px-2 text-center">
+                <span className={`inline-block px-2 py-0.5 rounded font-semibold tabular-nums ${marketHeatColor(b.avg_price_reductions, 'red')}`}>
+                  {b.avg_price_reductions}
+                </span>
+              </td>
+              <td className="py-2 px-2 text-center tabular-nums text-text-muted">{b.sample_count}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/* ── Market PQS Leaderboard ── */
+
+function MarketPqsLeaderboard({ results, mode }: { results: MarketPqsResult[]; mode: PqsMode }) {
+  if (results.length === 0) {
+    return <p className="text-xs text-text-muted italic">No data available — subcategory weights may not be configured</p>;
+  }
+
+  return (
+    <div className="space-y-1.5">
+      {results.map((r, i) => {
+        const scoreColor = mode === 'market'
+          ? (r.score >= 110 ? 'text-brand-green' : r.score >= 90 ? 'text-brand-teal' : 'text-brand-red')
+          : 'text-brand-teal';
+
+        return (
+          <div
+            key={r.agent_id}
+            className="flex items-center gap-3 py-1.5 group hover:bg-surface-light rounded-lg px-2 -mx-2 transition-colors"
+          >
+            <span className="w-7 text-sm font-bold text-text-muted text-right">#{i + 1}</span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <EntityLink
+                  type="agent"
+                  id={r.agent_id}
+                  label={r.canonical_name || `Agent ${r.agent_id}`}
+                  className="text-sm font-medium"
+                />
+                {r.office && (
+                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-surface-light text-text-muted">
+                    {r.office === 'larissa' ? 'LAR' : 'KAT'}
+                  </span>
+                )}
+              </div>
+              <div className="h-3 rounded-full overflow-hidden bg-surface-light">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${Math.min(mode === 'market' ? r.score / 2 : r.score, 100)}%`,
+                    backgroundColor: mode === 'market'
+                      ? (r.score >= 110 ? '#1D7A4E' : r.score >= 90 ? '#168F80' : '#DC3545')
+                      : '#168F80',
+                  }}
+                />
+              </div>
+            </div>
+            <span className={`text-lg font-bold tabular-nums w-16 text-right ${scoreColor}`}>
+              {r.score.toFixed(1)}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }

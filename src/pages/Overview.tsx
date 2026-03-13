@@ -11,8 +11,9 @@ import {
   computeTopAgent,
   computeTopTeam,
   computeOfficeComparison,
-  computeFunnel,
   aggregateByMonth,
+  KPI_DEFS,
+  individualsOnly,
 } from '../lib/metrics';
 import { TopPerformers } from '../components/overview/TopPerformers';
 import { KpiCards } from '../components/overview/KpiCards';
@@ -23,26 +24,82 @@ import { TrendChart } from '../components/overview/TrendChart';
 import { OfficeComparison } from '../components/overview/OfficeComparison';
 import { AnimatedSection } from '../components/animations/AnimatedSection';
 import { ExportPdfButton } from '../components/export/ExportPdfButton';
+import { DrilldownDrawer } from '../components/shared/DrilldownDrawer';
+import { useDrilldown } from '../hooks/useDrilldown';
+import { useAgentTargets } from '../hooks/useAgentTargets';
+import { usePacing } from '../hooks/usePacing';
 
 interface Props {
   period: Period;
 }
 
 export function Overview({ period }: Props) {
+  const { drilldown, openDrilldown, closeDrilldown } = useDrilldown();
   const { data: metrics, isLoading, error } = useMetrics(period);
   const { data: trendRaw, isLoading: trendLoading } = useTrend(period);
   const { data: journeys = [] } = usePropertyJourneys(period);
+
+  // Pacing
+  const currentYear = new Date().getFullYear();
+  const { data: targets } = useAgentTargets(currentYear);
+  const pacingData = usePacing(metrics, targets);
+  const onTrackPct = useMemo(() => {
+    if (pacingData.length === 0) return null;
+    const onTrack = pacingData.filter(a =>
+      a.metrics.some(m => m.status === 'ahead' || m.status === 'on_track')
+    ).length;
+    return Math.round((onTrack / pacingData.length) * 100);
+  }, [pacingData]);
 
   // v2: conversion rates & quality metrics (total + by office)
   const { total: convTotal, segments: convByOffice } = useConversionRates(journeys, 'office');
   const { total: qualityTotal, segments: qualityByOffice } = useQualityMetrics(journeys, 'office');
 
   const kpis = useMemo(() => (metrics ? computeKpis(metrics) : []), [metrics]);
+
+  // Per-KPI agent-level values for percentile tooltips
+  const agentValues = useMemo(() => {
+    if (!metrics) return {};
+    const individuals = individualsOnly(metrics);
+    const result: Record<string, number[]> = {};
+    for (const def of KPI_DEFS) {
+      const values: number[] = [];
+      const agentMap = new Map<number, number>();
+      for (const m of individuals) {
+        agentMap.set(m.agent_id, (agentMap.get(m.agent_id) || 0) + (Number(m[def.crmField]) || 0));
+      }
+      for (const v of agentMap.values()) values.push(v);
+      result[def.key] = values;
+    }
+    return result;
+  }, [metrics]);
   const topAgentLarissa = useMemo(() => (metrics ? computeTopAgent(metrics, 'larissa') : null), [metrics]);
   const topAgentKaterini = useMemo(() => (metrics ? computeTopAgent(metrics, 'katerini') : null), [metrics]);
   const topTeam = useMemo(() => (metrics ? computeTopTeam(metrics) : null), [metrics]);
   const offices = useMemo(() => (metrics ? computeOfficeComparison(metrics) : []), [metrics]);
-  const funnel = useMemo(() => (metrics ? computeFunnel(metrics) : []), [metrics]);
+  const funnel = useMemo(() => {
+    if (journeys.length === 0) return [];
+    const reg = journeys.filter(j => j.has_registration).length;
+    const excl = journeys.filter(j => j.has_exclusive).length;
+    const pub = journeys.filter(j => j.has_published).length;
+    const show = journeys.filter(j => j.has_showing).length;
+    const offer = journeys.filter(j => j.has_offer).length;
+    const close = journeys.filter(j => j.has_closing).length;
+    const steps = [
+      { label: 'Registrations (Καταγραφές)', value: reg },
+      { label: 'Exclusives (Αποκλειστικές)', value: excl },
+      { label: 'Published (Δημοσιευμένα)', value: pub },
+      { label: 'Showings (Υποδείξεις)', value: show },
+      { label: 'Offers (Προσφορές)', value: offer },
+      { label: 'Closings (Κλεισίματα)', value: close },
+    ];
+    const COLORS = ['#1B5299', '#168F80', '#1D7A4E', '#6B5CA5', '#C9961A', '#D4722A'];
+    return steps.map((s, i) => ({
+      ...s,
+      rate: i === 0 ? null : steps[i - 1].value > 0 ? Math.round((s.value / steps[i - 1].value) * 100) : null,
+      color: COLORS[i],
+    }));
+  }, [journeys]);
   const trendData = useMemo(() => (trendRaw ? aggregateByMonth(trendRaw) : []), [trendRaw]);
 
   if (isLoading) {
@@ -88,7 +145,7 @@ export function Overview({ period }: Props) {
               </span>
             </div>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight">
-              Συνοψη
+              Overview (Σύνοψη)
             </h2>
             <p className="text-lg sm:text-xl font-light text-white/80 mt-1">
               {period.label}
@@ -97,6 +154,12 @@ export function Overview({ period }: Props) {
 
           <div className="flex items-center gap-3">
             <ExportPdfButton elementId="page-overview" filename={`Συνοψη_${period.label}.pdf`} />
+            {onTrackPct !== null && (
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl px-5 py-3 border border-white/10">
+                <div className="text-3xl font-bold stat-number">{onTrackPct}%</div>
+                <div className="text-[11px] text-white/60 font-medium uppercase tracking-wider">ON PACE</div>
+              </div>
+            )}
             <div className="bg-white/10 backdrop-blur-sm rounded-xl px-5 py-3 border border-white/10">
               <div className="text-3xl font-bold stat-number">{totalAgents}</div>
               <div className="text-[11px] text-white/60 font-medium uppercase tracking-wider">ΣΥΝΕΡΓΑΤΕΣ</div>
@@ -112,7 +175,11 @@ export function Overview({ period }: Props) {
 
       {/* KPI Cards */}
       <AnimatedSection delay={0.25}>
-        <KpiCards kpis={kpis} />
+        <KpiCards
+          kpis={kpis}
+          agentValues={agentValues}
+          onDrilldown={(metric, title, count) => openDrilldown({ metric, period, title, count })}
+        />
       </AnimatedSection>
 
       {/* v2: Conversion Rates */}
@@ -141,6 +208,18 @@ export function Overview({ period }: Props) {
       <AnimatedSection delay={0.5}>
         <TrendChart data={trendData} isLoading={trendLoading} />
       </AnimatedSection>
+
+      {/* Drilldown Drawer */}
+      {drilldown && (
+        <DrilldownDrawer
+          metric={drilldown.metric}
+          period={drilldown.period}
+          agentId={drilldown.agentId}
+          title={drilldown.title}
+          count={drilldown.count}
+          onClose={closeDrilldown}
+        />
+      )}
     </div>
   );
 }

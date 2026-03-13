@@ -148,6 +148,31 @@ export function PortfolioPublished({ period }: Props) {
     };
   }, [journeys, onlineProperties, exclusiveSet, period]);
 
+  // Map property_id → days until exclusive expires
+  const exclusiveDaysLeft = useMemo(() => {
+    const map = new Map<string, number | null>();
+    const today = new Date();
+    for (const e of exclusives) {
+      if (e.end_date) {
+        const end = new Date(e.end_date + 'T00:00:00');
+        const days = Math.round((end.getTime() - today.getTime()) / 86_400_000);
+        map.set(e.property_id, days);
+      } else {
+        map.set(e.property_id, null);
+      }
+    }
+    return map;
+  }, [exclusives]);
+
+  // Count expiring exclusives
+  const expiringCount = useMemo(() => {
+    let count = 0;
+    for (const days of exclusiveDaysLeft.values()) {
+      if (days !== null && days >= 0 && days < 30) count++;
+    }
+    return count;
+  }, [exclusiveDaysLeft]);
+
   // ── Filtered & sorted table data ──
   const tableData = useMemo(() => {
     let list = onlineProperties.map(j => ({
@@ -155,6 +180,7 @@ export function PortfolioPublished({ period }: Props) {
       pubStatus: computePubStatus(j),
       hasExclusive: exclusiveSet.has(j.property_id),
       eurSqm: eurPerSqm(j.listing_price, j.size_sqm),
+      daysLeft: exclusiveDaysLeft.get(j.property_id) ?? null,
     }));
 
     // Office filter
@@ -250,7 +276,7 @@ export function PortfolioPublished({ period }: Props) {
   return (
     <div className="max-w-[1600px] mx-auto px-6 py-6 space-y-6">
       <h2 className="text-xl font-semibold text-text-primary">
-        Δημοσιευμένα Ακίνητα
+        Published Portfolio (Δημοσιευμένα Ακίνητα)
         <span className="text-sm font-normal text-text-muted ml-3">{period.label}</span>
       </h2>
 
@@ -347,6 +373,13 @@ export function PortfolioPublished({ period }: Props) {
         </label>
       </div>
 
+      {/* ── Expiring Alert ── */}
+      {expiringCount > 0 && (
+        <div className="bg-brand-red/5 border border-brand-red/20 rounded-lg px-4 py-3 text-sm text-brand-red font-medium">
+          {expiringCount} exclusive{expiringCount > 1 ? 's' : ''} expiring in &lt;30 days
+        </div>
+      )}
+
       {/* ── Table ── */}
       <div className="bg-surface-card rounded-xl border border-border-default p-4 overflow-x-auto">
         <div className="flex items-center justify-between mb-3">
@@ -373,6 +406,7 @@ export function PortfolioPublished({ period }: Props) {
                 <Th label="Ημέρες" sortKey="days_on_market" current={sortKey} asc={sortAsc} onClick={handleSort} icon={sortIcon} align="right" />
                 <Th label="Υποδ." sortKey="total_showings" current={sortKey} asc={sortAsc} onClick={handleSort} icon={sortIcon} align="right" />
                 <Th label="Αποκλ." sortKey="exclusive" current={sortKey} asc={sortAsc} onClick={handleSort} icon={sortIcon} align="center" />
+                <th className="pb-1.5 pr-3 font-medium text-right text-text-muted">Days Left</th>
                 <Th label="Σύμβουλος" sortKey="canonical_name" current={sortKey} asc={sortAsc} onClick={handleSort} icon={sortIcon} />
                 <Th label="Status" sortKey="status" current={sortKey} asc={sortAsc} onClick={handleSort} icon={sortIcon} />
               </tr>
@@ -422,6 +456,22 @@ export function PortfolioPublished({ period }: Props) {
                   <td className="py-1.5 pr-3 text-center">
                     {j.hasExclusive ? (
                       <span className="inline-block w-2 h-2 rounded-full bg-brand-blue" title="Αποκλειστικό" />
+                    ) : (
+                      <span className="text-text-muted">—</span>
+                    )}
+                  </td>
+                  <td className="py-1.5 pr-3 text-right tabular-nums">
+                    {j.daysLeft !== null ? (
+                      <span className={`font-medium ${
+                        j.daysLeft < 15 ? 'text-brand-red font-bold' :
+                        j.daysLeft < 30 ? 'text-brand-red' :
+                        j.daysLeft < 60 ? 'text-brand-gold' :
+                        'text-brand-green'
+                      }`}>
+                        {j.daysLeft}d
+                      </span>
+                    ) : j.hasExclusive ? (
+                      <span className="text-text-muted text-[10px]">N/A</span>
                     ) : (
                       <span className="text-text-muted">—</span>
                     )}

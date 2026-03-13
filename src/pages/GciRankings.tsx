@@ -58,9 +58,9 @@ export function GciRankings({ period }: Props) {
         <div className="relative z-10 flex flex-wrap items-start justify-between gap-4">
           <div>
             <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-white/60 bg-white/10 px-2.5 py-1 rounded-full mb-3">
-              ΤΖΙΡΟΣ
+              GCI Rankings
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold">{period.label}</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold">GCI Rankings (Κατάταξη Τζίρου)</h2>
             <p className="text-white/60 text-sm mt-1">{rankings.length} συνεργατες</p>
           </div>
           <ExportPdfButton elementId="page-gci" filename={`gci-${period.label}.pdf`} />

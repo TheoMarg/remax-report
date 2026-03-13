@@ -15,6 +15,8 @@ import { PropertyLink } from '../components/ui/PropertyLink';
 import { AgentLink } from '../components/ui/AgentLink';
 import { formatDateEL } from '../lib/propertyMetrics';
 import { aggregateByMonth } from '../lib/metrics';
+import { CohortAnalysis } from '../components/insights/CohortAnalysis';
+import { DemandIntelligence } from '../components/insights/DemandIntelligence';
 
 
 function fmtEur(n: number | null | undefined): string {
@@ -37,7 +39,7 @@ export function Insights({ period }: Props) {
   const { data: stuckAlerts = [], isLoading: stuckLoading } = useStuckAlerts();
   const { data: exclusives = [] } = useActiveExclusives();
   const { data: trendMetrics = [] } = useTrend(period);
-  const [insightTab, setInsightTab] = useState<'pricing' | 'seasonality' | 'pipeline' | 'aging' | 'cooperation' | 'stuck'>('pricing');
+  const [insightTab, setInsightTab] = useState<'pricing' | 'seasonality' | 'pipeline' | 'aging' | 'cooperation' | 'stuck' | 'demand'>('pricing');
 
   const isLoading = journeysLoading || pipelineLoading || stuckLoading;
 
@@ -151,6 +153,7 @@ export function Insights({ period }: Props) {
     { key: 'aging', label: 'At-Risk' },
     { key: 'cooperation', label: 'Συνεργασία' },
     { key: 'stuck', label: 'Stuck Alerts' },
+    { key: 'demand', label: 'Demand Intel' },
   ] as const;
 
   return (
@@ -169,8 +172,8 @@ export function Insights({ period }: Props) {
             <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-white/60 bg-white/10 px-2.5 py-1 rounded-full mb-3">
               Insights
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold">{period.label}</h2>
-            <p className="text-white/60 text-sm mt-1">Ανάλυση αγοράς, pipeline, κίνδυνοι & ευκαιρίες</p>
+            <h2 className="text-2xl sm:text-3xl font-bold">Insights (Αναλύσεις)</h2>
+            <p className="text-white/60 text-sm mt-1">{period.label} — Ανάλυση αγοράς, pipeline, κίνδυνοι & ευκαιρίες</p>
           </div>
           <ExportPdfButton elementId="page-insights" filename={`insights-${period.label}.pdf`} />
         </div>
@@ -580,6 +583,22 @@ export function Insights({ period }: Props) {
               </div>
             )}
           </div>
+        </AnimatedSection>
+      )}
+
+      {/* ═══════════════════════ */}
+      {/* DEMAND INTELLIGENCE    */}
+      {/* ═══════════════════════ */}
+      {insightTab === 'demand' && (
+        <AnimatedSection delay={0.1}>
+          <DemandIntelligence />
+        </AnimatedSection>
+      )}
+
+      {/* Cohort Analysis */}
+      {journeys.length > 0 && (
+        <AnimatedSection delay={0.6}>
+          <CohortAnalysis journeys={journeys} />
         </AnimatedSection>
       )}
     </div>

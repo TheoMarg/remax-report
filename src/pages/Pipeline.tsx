@@ -8,7 +8,10 @@ import { PipelineFlowHeader } from '../components/pipeline/PipelineFlowHeader';
 import { PipelineStageKPIs } from '../components/pipeline/PipelineStageKPIs';
 import { PipelineBreakdownTable } from '../components/pipeline/PipelineBreakdownTable';
 import { PipelineCharts } from '../components/pipeline/PipelineCharts';
+import { PipelineComparison } from '../components/pipeline/PipelineComparison';
+import { VelocityTrend } from '../components/pipeline/VelocityTrend';
 import { EntityLink } from '../components/shared/EntityLink';
+import { useAgents, useTeamMembers } from '../hooks/useAgents';
 
 const STAGE_FLAG: Record<StageName, keyof PropertyJourney> = {
   registration: 'has_registration',
@@ -32,11 +35,24 @@ interface Props {
   period: Period;
 }
 
+type CategoryFilter = 'all' | 'sale' | 'rent';
+
 export function Pipeline({ period }: Props) {
   const [activeStage, setActiveStage] = useState<StageName>('registration');
-  const { data: journeys = [], isLoading } = usePropertyJourneys(period);
-  const flows = useAllStageFlows(journeys);
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
+  const { data: allJourneys = [], isLoading } = usePropertyJourneys(period);
   const { data: stuckAlerts = [] } = useStuckAlerts();
+  const { data: agents = [] } = useAgents();
+  const { data: teamMembers = [] } = useTeamMembers();
+
+  // Filter by sale/rent
+  const journeys = useMemo(() => {
+    if (categoryFilter === 'all') return allJourneys;
+    if (categoryFilter === 'sale') return allJourneys.filter(j => j.category === 'Πώληση' || j.category === 'sale');
+    return allJourneys.filter(j => j.category === 'Ενοικίαση' || j.category === 'rent');
+  }, [allJourneys, categoryFilter]);
+
+  const flows = useAllStageFlows(journeys);
 
   const activeFlow = flows.find(f => f.stage === activeStage) ?? flows[0];
 
@@ -53,10 +69,27 @@ export function Pipeline({ period }: Props) {
 
   return (
     <div className="max-w-[1600px] mx-auto px-6 py-6 space-y-6">
-      <h2 className="text-xl font-semibold text-text-primary">
-        Pipeline (Ροή Ακινήτων)
-        <span className="text-sm font-normal text-text-muted ml-3">{period.label}</span>
-      </h2>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-xl font-semibold text-text-primary">
+          Pipeline (Ροή Ακινήτων)
+          <span className="text-sm font-normal text-text-muted ml-3">{period.label}</span>
+        </h2>
+        <div className="flex gap-1 bg-surface-light rounded-lg p-1">
+          {([['all', 'All'], ['sale', 'Sale (Πώληση)'], ['rent', 'Rent (Ενοικίαση)']] as const).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setCategoryFilter(key as CategoryFilter)}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                categoryFilter === key
+                  ? 'bg-surface-card text-brand-blue shadow-sm'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {isLoading ? (
         <div className="space-y-4">
@@ -86,12 +119,28 @@ export function Pipeline({ period }: Props) {
           {/* Charts */}
           <PipelineCharts journeys={journeys} stage={activeStage} />
 
+          {/* Velocity Trend */}
+          <VelocityTrend journeys={journeys} />
+
           {/* Breakdown table */}
           <div className="bg-surface-card rounded-xl border border-border-default p-4">
             <h3 className="text-sm font-semibold text-text-primary mb-3">
-              Ανάλυση ανά Γραφείο / Σύμβουλο
+              Breakdown by Office / Agent (Ανάλυση ανά Γραφείο / Σύμβουλο)
             </h3>
             <PipelineBreakdownTable journeys={journeys} stage={activeStage} />
+          </div>
+
+          {/* 4-level Comparison */}
+          <div className="bg-surface-card rounded-xl border border-border-default p-4">
+            <h3 className="text-sm font-semibold text-text-primary mb-3">
+              Stage Comparison (Σύγκριση Σταδίου)
+            </h3>
+            <PipelineComparison
+              journeys={journeys}
+              stage={activeStage}
+              agents={agents}
+              teamMembers={teamMembers}
+            />
           </div>
 
           {/* Stuck alerts */}

@@ -1,8 +1,15 @@
+import { useState } from 'react';
 import type { KpiSummary } from '../../lib/metrics';
 import { StaggerContainer, StaggerItem } from '../animations/AnimatedSection';
+import { formatPercentileSummary } from '../../lib/percentiles';
+import type { DrilldownMetric } from '../shared/DrilldownDrawer';
 
 interface Props {
   kpis: KpiSummary[];
+  /** Per-KPI individual agent values for percentile computation */
+  agentValues?: Record<string, number[]>;
+  /** Open drilldown for evidence */
+  onDrilldown?: (metric: DrilldownMetric, title: string, count: number) => void;
 }
 
 const OFFICE_SHORT: Record<string, string> = {
@@ -33,16 +40,38 @@ function DeltaBadge({ delta, hasAcc }: { delta: number; hasAcc: boolean }) {
   );
 }
 
-export function KpiCards({ kpis }: Props) {
+const DRILLDOWN_KEYS: Record<string, DrilldownMetric> = {
+  registrations: 'registrations',
+  exclusives: 'exclusives',
+  showings: 'showings',
+  offers: 'offers',
+  closings: 'closings',
+  billing: 'billing',
+};
+
+export function KpiCards({ kpis, agentValues, onDrilldown }: Props) {
+  const [hoveredKpi, setHoveredKpi] = useState<string | null>(null);
+
   return (
     <StaggerContainer className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3">
       {kpis.map((kpi) => {
         const hasAcc = kpi.key !== 'published';
+        const pctSummary = agentValues?.[kpi.key]
+          ? formatPercentileSummary(agentValues[kpi.key])
+          : '';
         return (
           <StaggerItem key={kpi.key}>
             <div
               className="card-premium p-4 relative overflow-hidden group"
+              onMouseEnter={() => setHoveredKpi(kpi.key)}
+              onMouseLeave={() => setHoveredKpi(null)}
             >
+              {/* Percentile tooltip */}
+              {hoveredKpi === kpi.key && pctSummary && (
+                <div className="absolute z-10 bottom-full left-1/2 -translate-x-1/2 mb-1 bg-text-primary text-white text-[9px] px-2.5 py-1.5 rounded-lg whitespace-nowrap shadow-lg pointer-events-none">
+                  {pctSummary}
+                </div>
+              )}
               {/* Color accent strip */}
               <div
                 className="absolute top-0 left-0 right-0 h-[3px]"
@@ -51,9 +80,18 @@ export function KpiCards({ kpis }: Props) {
               <div className="text-[11px] font-medium text-text-muted mb-2 mt-1">
                 {kpi.label}
               </div>
-              <div className="text-2xl font-extrabold text-text-primary stat-number">
-                {kpi.crm.toLocaleString('el-GR')}
-              </div>
+              {onDrilldown && DRILLDOWN_KEYS[kpi.key] ? (
+                <button
+                  onClick={() => onDrilldown(DRILLDOWN_KEYS[kpi.key], kpi.label, kpi.crm)}
+                  className="text-2xl font-extrabold text-text-primary stat-number hover:text-brand-blue transition-colors cursor-pointer"
+                >
+                  {kpi.crm.toLocaleString('el-GR')}
+                </button>
+              ) : (
+                <div className="text-2xl font-extrabold text-text-primary stat-number">
+                  {kpi.crm.toLocaleString('el-GR')}
+                </div>
+              )}
               {kpi.sale != null && kpi.rent != null && (
                 <div className="text-[10px] text-text-muted mt-1 flex gap-1.5">
                   <span className="text-brand-blue">Π {kpi.sale}</span>

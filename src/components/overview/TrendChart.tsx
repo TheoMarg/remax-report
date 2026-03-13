@@ -68,7 +68,7 @@ export function TrendChart({ data, isLoading }: Props) {
     <div className="card-premium p-5">
       <div className="flex items-center gap-2 mb-5">
         <div className="w-7 h-7 rounded-lg bg-brand-gold/10 flex items-center justify-center text-sm">📈</div>
-        <h3 className="text-sm font-bold text-text-primary">Τάσεις 6μήνου</h3>
+        <h3 className="text-sm font-bold text-text-primary">6-Month Trend (Τάσεις 6μήνου)</h3>
       </div>
       <ResponsiveContainer width="100%" height={300}>
         <ComposedChart data={data} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>

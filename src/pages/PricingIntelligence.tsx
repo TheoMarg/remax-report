@@ -7,6 +7,8 @@ import type { Period } from '../lib/types';
 import { usePricingData } from '../hooks/usePricingData';
 import { usePricingEngine, type PricingFilters, type BreakdownRow } from '../hooks/usePricingEngine';
 import type { PropertyPricing, ClosingPricing } from '../lib/types';
+import { usePropertyJourneys } from '../hooks/usePropertyJourneys';
+import { PriceElasticity } from '../components/pricing/PriceElasticity';
 
 type PricingRow = PropertyPricing | ClosingPricing;
 
@@ -29,6 +31,7 @@ interface Props {
 }
 
 export function PricingIntelligence({ period }: Props) {
+  const { data: journeys = [] } = usePropertyJourneys(period);
   const [mode, setMode] = useState<PricingMode>('active');
   const { data: rawData = [], isLoading } = usePricingData(mode, mode === 'closed' ? period : undefined);
   const { filters, toggleFilter, clearFilters, filtered, kpis, breakdowns } = usePricingEngine(rawData as PricingRow[]);
@@ -54,7 +57,7 @@ export function PricingIntelligence({ period }: Props) {
       {/* Header + Mode Toggle */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold text-text-primary">
-          Pricing Intelligence
+          Pricing Intelligence (Τιμολόγηση)
           <span className="text-sm font-normal text-text-muted ml-3">{period.label}</span>
         </h2>
         <div className="flex gap-1 bg-surface-light rounded-lg p-0.5">
@@ -171,6 +174,9 @@ export function PricingIntelligence({ period }: Props) {
             {filtered.length} ακίνητα {mode === 'active' ? 'στην αγορά' : 'κλεισμένα'}
             {activeFilters.length > 0 && ` (${activeFilters.length} φίλτρα ενεργά)`}
           </div>
+
+          {/* Price Elasticity */}
+          {journeys.length > 0 && <PriceElasticity journeys={journeys} />}
         </>
       )}
     </div>

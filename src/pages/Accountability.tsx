@@ -16,6 +16,8 @@ import { ExportPdfButton } from '../components/export/ExportPdfButton';
 import { MiniKpiCard } from '../components/shared/MiniKpiCard';
 import { GaugeMeter } from '../components/shared/GaugeMeter';
 import { AgentLink } from '../components/ui/AgentLink';
+import { ConversionTabs } from '../components/accountability/ConversionTabs';
+import { ActivityHeatmap } from '../components/accountability/ActivityHeatmap';
 
 // ── Activity KPI definitions ──
 
@@ -363,7 +365,7 @@ export function Accountability({ period }: Props) {
             <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-white/60 bg-white/10 px-2.5 py-1 rounded-full mb-3">
               Accountability
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold">{period.label}</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold">Accountability (Λογοδοσία)</h2>
             <p className="text-white/60 text-sm mt-1">
               Αναφορές Συνεργατών &mdash; {selectedName}
             </p>
@@ -394,7 +396,7 @@ export function Accountability({ period }: Props) {
       {/* ══════════════════════════════════════════ */}
       <AnimatedSection delay={0.1}>
         <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-text-primary">Δραστηριότητα (ACC)</h3>
+          <h3 className="text-lg font-semibold text-text-primary">Activity (Δραστηριότητα) — ACC</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {ACTIVITY_KPIS.map(kpi => (
               <MiniKpiCard
@@ -413,7 +415,7 @@ export function Accountability({ period }: Props) {
       {/* ══════════════════════════════════════════ */}
       <AnimatedSection delay={0.15}>
         <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-text-primary">Δηλωμένα Αποτελέσματα (ACC)</h3>
+          <h3 className="text-lg font-semibold text-text-primary">Declared Results (Δηλωμένα Αποτελέσματα) — ACC</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {declaredResults && [
               { label: 'Καταγραφές', value: declaredResults.registrations },
@@ -439,6 +441,20 @@ export function Accountability({ period }: Props) {
       <AnimatedSection delay={0.2}>
         <CrmVsAccChart rows={crmVsAccSummary} />
       </AnimatedSection>
+
+      {/* ══════════════════════════════════════════ */}
+      {/* SECTION 3.5: Conversion Tabs               */}
+      {/* ══════════════════════════════════════════ */}
+      {metrics && (
+        <AnimatedSection delay={0.22}>
+          <ConversionTabs
+            metrics={metrics}
+            activity={activity}
+            selectedAgent={selectedAgent}
+            agents={agents}
+          />
+        </AnimatedSection>
+      )}
 
       {/* ══════════════════════════════════════════ */}
       {/* SECTION 4: Per-Agent Accuracy Matrix       */}
@@ -699,6 +715,15 @@ export function Accountability({ period }: Props) {
               P100 = κορυφή, P0 = τελευταίος. Βάσει CRM δεδομένων.
             </div>
           </div>
+        </AnimatedSection>
+      )}
+
+      {/* ══════════════════════════════════════════ */}
+      {/* SECTION 9.5: Activity Heatmap               */}
+      {/* ══════════════════════════════════════════ */}
+      {activity && selectedAgent === 'all' && (
+        <AnimatedSection delay={0.48}>
+          <ActivityHeatmap activity={activity} agents={agents} />
         </AnimatedSection>
       )}
 

@@ -63,3 +63,13 @@ body {
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
 }
+
+/* Slide-in drawer animation */
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.25s ease-out;
+}

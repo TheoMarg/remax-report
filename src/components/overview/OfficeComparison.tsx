@@ -55,7 +55,7 @@ export function OfficeComparison({ offices }: Props) {
   if (sorted.length < 2) {
     return (
       <div className="card-premium p-5">
-        <h3 className="text-sm font-bold text-text-primary mb-2">Γραφείο vs Γραφείο</h3>
+        <h3 className="text-sm font-bold text-text-primary mb-2">Office Comparison (Σύγκριση Γραφείων)</h3>
         <p className="text-sm text-text-muted">Χρειάζονται δεδομένα από 2+ γραφεία</p>
       </div>
     );
@@ -68,7 +68,7 @@ export function OfficeComparison({ offices }: Props) {
     <div className="card-premium p-5">
       <div className="flex items-center gap-2 mb-5">
         <div className="w-7 h-7 rounded-lg bg-brand-teal/10 flex items-center justify-center text-sm">🏢</div>
-        <h3 className="text-sm font-bold text-text-primary">Γραφείο vs Γραφείο</h3>
+        <h3 className="text-sm font-bold text-text-primary">Office Comparison (Σύγκριση Γραφείων)</h3>
       </div>
       {/* Office headers */}
       <div className="flex items-center mb-4 pb-3 border-b border-border-default">
