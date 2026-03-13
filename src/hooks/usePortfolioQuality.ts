@@ -10,7 +10,11 @@ export function usePortfolioQuality() {
         .from('v_portfolio_quality')
         .select('*');
 
-      if (error) throw error;
+      if (error) {
+        console.error('[usePortfolioQuality] error:', error);
+        throw error;
+      }
+      console.log('[usePortfolioQuality] loaded', data?.length, 'agents');
       return data ?? [];
     },
     staleTime: 1000 * 60 * 60,

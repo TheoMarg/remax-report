@@ -21,6 +21,15 @@ const OFFICE_LABEL: Record<string, string> = {
   katerini: 'Κατερίνη',
 };
 
+const PQS_DIM_LABELS: Record<string, string> = {
+  freshness: 'Freshness (DOM)',
+  exclusive_ratio: 'Exclusive Ratio',
+  activity_level: 'Activity Level',
+  pricing_accuracy: 'Pricing Accuracy',
+  pipeline_depth: 'Pipeline Depth',
+  demand_score: 'Demand Score',
+};
+
 function fmt(n: number | null | undefined): string {
   if (n == null) return '—';
   return n.toLocaleString('el-GR');
@@ -181,7 +190,7 @@ export function Agent360Content({ agentId }: Props) {
               <div className="mt-2 space-y-1">
                 {Object.entries(myWps.breakdown).map(([key, val]) => (
                   <div key={key} className="flex items-center gap-2 text-[10px]">
-                    <span className="w-16 text-text-muted truncate capitalize">{key}</span>
+                    <span className="w-20 shrink-0 text-text-muted capitalize">{key}</span>
                     <div className="flex-1 h-1 bg-border-subtle rounded-full overflow-hidden">
                       <div className="h-full bg-brand-blue/60 rounded-full" style={{ width: `${Math.min((val / (myWps.wps || 1)) * 100, 100)}%` }} />
                     </div>
@@ -210,7 +219,7 @@ export function Agent360Content({ agentId }: Props) {
               <div className="mt-2 space-y-1">
                 {Object.entries(myPqs.dimensions).map(([key, val]) => (
                   <div key={key} className="flex items-center gap-2 text-[10px]">
-                    <span className="w-16 text-text-muted truncate capitalize">{key.replace('_', ' ')}</span>
+                    <span className="w-28 shrink-0 text-text-muted">{PQS_DIM_LABELS[key] ?? key}</span>
                     <div className="flex-1 h-1 bg-border-subtle rounded-full overflow-hidden">
                       <div className="h-full bg-brand-teal/60 rounded-full" style={{ width: `${Math.min(val, 100)}%` }} />
                     </div>

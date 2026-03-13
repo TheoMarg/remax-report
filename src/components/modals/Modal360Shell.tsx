@@ -48,7 +48,7 @@ export function Modal360Shell() {
           {/* Slide-in right panel */}
           <motion.div
             key="modal360-panel"
-            className="fixed top-0 right-0 z-50 h-full w-full max-w-[480px] bg-surface-card shadow-2xl border-l border-border-default flex flex-col"
+            className="fixed top-0 right-0 z-50 h-full w-full max-w-[50vw] bg-surface-card shadow-2xl border-l border-border-default flex flex-col"
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}

@@ -396,6 +396,7 @@ export interface PropertyPricing {
   subcategory: string | null;
   area: string | null;
   region: string | null;
+  transaction_type: string | null;
   price: number | null;
   size_sqm: number | null;
   bedrooms: number | null;
@@ -407,6 +408,8 @@ export interface PropertyPricing {
   first_pub_date: string | null;
   registration_date: string | null;
   days_on_market: number | null;
+  lat: number | null;
+  lng: number | null;
   eur_per_sqm: number | null;
   condition: string;
   year_band: string;

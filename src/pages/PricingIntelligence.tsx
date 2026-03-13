@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   ScatterChart, Scatter, ZAxis,
@@ -9,6 +9,9 @@ import { usePricingEngine, type PricingFilters, type BreakdownRow } from '../hoo
 import type { PropertyPricing, ClosingPricing } from '../lib/types';
 import { usePropertyJourneys } from '../hooks/usePropertyJourneys';
 import { PriceElasticity } from '../components/pricing/PriceElasticity';
+import { PropertyLink } from '../components/ui/PropertyLink';
+
+const PropertyMap = lazy(() => import('../components/pricing/PropertyMap').then(m => ({ default: m.PropertyMap })));
 
 type PricingRow = PropertyPricing | ClosingPricing;
 
@@ -25,6 +28,7 @@ function fmt(n: number | null | undefined): string {
 }
 
 const OFFICE_LABELS: Record<string, string> = { larissa: 'Λάρισα', katerini: 'Κατερίνη' };
+const PAGE_SIZE = 50;
 
 interface Props {
   period: Period;
@@ -36,8 +40,25 @@ export function PricingIntelligence({ period }: Props) {
   const { data: rawData = [], isLoading } = usePricingData(mode, mode === 'closed' ? period : undefined);
   const { filters, toggleFilter, clearFilters, filtered, kpis, breakdowns } = usePricingEngine(rawData as PricingRow[]);
 
+  const [page, setPage] = useState(0);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
+
+  // Reset page when filters change
+  const filterKey = JSON.stringify(filters);
+  useEffect(() => setPage(0), [filterKey]);
+
   // Active filter chips
   const activeFilters = Object.entries(filters).filter(([, v]) => v != null) as [keyof PricingFilters, string | number][];
+
+  // Agent ID → name lookup for breakdown card labels
+  const agentNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const r of rawData as PricingRow[]) {
+      const name = 'canonical_name' in r ? r.canonical_name : null;
+      if (name) map.set(String(r.agent_id), name);
+    }
+    return map;
+  }, [rawData]);
 
   // Scatter data: price vs size
   const scatterData = filtered
@@ -51,6 +72,34 @@ export function PricingIntelligence({ period }: Props) {
       price: 'closing_price' in r ? (r as ClosingPricing).closing_price : (r as PropertyPricing).price,
       name: ('property_code' in r ? r.property_code : (r as ClosingPricing).property_id?.slice(0, 8)) || '—',
     }));
+
+  // Map data: only properties with coordinates
+  const mapProperties = useMemo(() =>
+    filtered
+      .filter(r => 'lat' in r && (r as PropertyPricing).lat && (r as PropertyPricing).lng)
+      .map(r => {
+        const pp = r as PropertyPricing;
+        return {
+          property_id: pp.property_id,
+          property_code: pp.property_code,
+          lat: pp.lat!,
+          lng: pp.lng!,
+          price: pp.price,
+          size_sqm: pp.size_sqm,
+          area: pp.area,
+          subcategory: pp.subcategory,
+        };
+      }),
+    [filtered]
+  );
+
+  // Paginated table rows
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+  const tableRows = filtered.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
+
+  // All property IDs for sibling navigation
+  const allPropertyIds = useMemo(() => filtered.map(r => r.property_id), [filtered]);
 
   return (
     <div className="max-w-[1600px] mx-auto px-6 py-6 space-y-5">
@@ -118,7 +167,7 @@ export function PricingIntelligence({ period }: Props) {
             ))}
           </div>
 
-          {/* Breakdown Grid (2×4) */}
+          {/* Breakdown Grid */}
           <div className="grid grid-cols-4 gap-3">
             <BreakdownCard title="Κατηγορία" rows={breakdowns.byCategory} filterKey="subcategory" onToggle={toggleFilter} activeFilter={filters.subcategory} />
             <BreakdownCard title="Περιοχή" rows={breakdowns.byArea} filterKey="area" onToggle={toggleFilter} activeFilter={filters.area} />
@@ -126,8 +175,11 @@ export function PricingIntelligence({ period }: Props) {
             <BreakdownCard title="Γραφείο" rows={breakdowns.byOffice} filterKey="office" onToggle={toggleFilter} activeFilter={filters.office} labelFn={(k) => OFFICE_LABELS[k] || k} />
             <BreakdownCard title="Έτος Κατασκ." rows={breakdowns.byYearBand} filterKey="year_band" onToggle={toggleFilter} activeFilter={filters.year_band} />
             <BreakdownCard title="Εμβαδό" rows={breakdowns.bySqmBand} filterKey="sqm_band" onToggle={toggleFilter} activeFilter={filters.sqm_band} />
-            <BreakdownCard title="Όροφος" rows={breakdowns.byFloor} filterKey="floor" onToggle={toggleFilter} activeFilter={undefined} />
-            <BreakdownCard title="Σύμβουλος" rows={breakdowns.byAgent} filterKey="agent_id" onToggle={toggleFilter} activeFilter={undefined} />
+            <BreakdownCard title="Όροφος" rows={breakdowns.byFloor} filterKey="floor" onToggle={toggleFilter} activeFilter={filters.floor} />
+            <BreakdownCard title="Σύμβουλος" rows={breakdowns.byAgent} filterKey="agent_id" onToggle={(k, v) => toggleFilter(k, Number(v))} activeFilter={filters.agent_id != null ? String(filters.agent_id) : undefined} labelFn={k => agentNameMap.get(k) || k} />
+            <BreakdownCard title="Συναλλαγή" rows={breakdowns.byTransactionType} filterKey="transaction_type" onToggle={toggleFilter} activeFilter={filters.transaction_type} />
+            <BreakdownCard title="Ενέργεια" rows={breakdowns.byEnergyClass} filterKey="energy_class" onToggle={toggleFilter} activeFilter={filters.energy_class} />
+            <BreakdownCard title="Υπνοδωμάτια" rows={breakdowns.byBedrooms} filterKey="bedrooms" onToggle={(k, v) => toggleFilter(k, Number(v))} activeFilter={filters.bedrooms != null ? String(filters.bedrooms) : undefined} />
           </div>
 
           {/* Charts */}
@@ -173,6 +225,124 @@ export function PricingIntelligence({ period }: Props) {
           <div className="text-xs text-text-muted text-right">
             {filtered.length} ακίνητα {mode === 'active' ? 'στην αγορά' : 'κλεισμένα'}
             {activeFilters.length > 0 && ` (${activeFilters.length} φίλτρα ενεργά)`}
+          </div>
+
+          {/* Property Table + Map */}
+          <div className="grid grid-cols-[1fr_400px] gap-4">
+            {/* Property Table */}
+            <div className="bg-surface-card rounded-xl border border-border-default overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-[11px]">
+                  <thead>
+                    <tr className="bg-surface-light border-b border-border-default">
+                      <th className="text-left px-2 py-2 font-semibold text-text-muted uppercase tracking-wider">Κωδικός</th>
+                      <th className="text-left px-2 py-2 font-semibold text-text-muted uppercase tracking-wider">Τύπος</th>
+                      <th className="text-left px-2 py-2 font-semibold text-text-muted uppercase tracking-wider">Περιοχή</th>
+                      <th className="text-right px-2 py-2 font-semibold text-text-muted uppercase tracking-wider">Τιμή</th>
+                      <th className="text-right px-2 py-2 font-semibold text-text-muted uppercase tracking-wider">€/m²</th>
+                      <th className="text-right px-2 py-2 font-semibold text-text-muted uppercase tracking-wider">m²</th>
+                      <th className="text-center px-2 py-2 font-semibold text-text-muted uppercase tracking-wider">Υπν.</th>
+                      <th className="text-left px-2 py-2 font-semibold text-text-muted uppercase tracking-wider">Όροφος</th>
+                      <th className="text-center px-2 py-2 font-semibold text-text-muted uppercase tracking-wider">Έτος</th>
+                      <th className="text-right px-2 py-2 font-semibold text-text-muted uppercase tracking-wider">Ημέρες</th>
+                      <th className="text-left px-2 py-2 font-semibold text-text-muted uppercase tracking-wider">
+                        {mode === 'active' ? 'Δημοσ.' : 'Κλείσιμο'}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tableRows.map(row => {
+                      const isActive = 'price' in row && !('closing_price' in row);
+                      const pp = row as PropertyPricing;
+                      const cp = row as ClosingPricing;
+                      const price = isActive ? pp.price : cp.closing_price;
+                      const code = row.property_code || row.property_id.slice(0, 8);
+                      const isSelected = row.property_id === selectedPropertyId;
+
+                      return (
+                        <tr
+                          key={row.property_id + (isActive ? '' : `-${cp.closing_id}`)}
+                          onClick={() => setSelectedPropertyId(row.property_id === selectedPropertyId ? null : row.property_id)}
+                          className={`border-b border-border-subtle cursor-pointer transition-colors ${
+                            isSelected ? 'bg-brand-blue/5' : 'hover:bg-surface-light'
+                          }`}
+                        >
+                          <td className="px-2 py-1.5 font-medium">
+                            <PropertyLink
+                              propertyId={row.property_id}
+                              code={code}
+                              className="text-brand-blue text-[11px]"
+                              siblingIds={allPropertyIds}
+                            />
+                          </td>
+                          <td className="px-2 py-1.5 text-text-secondary truncate max-w-[100px]">{row.subcategory || '—'}</td>
+                          <td className="px-2 py-1.5 text-text-secondary truncate max-w-[100px]">{row.area || '—'}</td>
+                          <td className="px-2 py-1.5 text-right tabular-nums font-medium text-text-primary">{fmtEur(price)}</td>
+                          <td className="px-2 py-1.5 text-right tabular-nums text-text-muted">{fmtEur(row.eur_per_sqm)}</td>
+                          <td className="px-2 py-1.5 text-right tabular-nums text-text-secondary">{row.size_sqm ?? '—'}</td>
+                          <td className="px-2 py-1.5 text-center tabular-nums text-text-secondary">{'bedrooms' in row ? (row.bedrooms ?? '—') : '—'}</td>
+                          <td className="px-2 py-1.5 text-text-secondary">{row.floor || '—'}</td>
+                          <td className="px-2 py-1.5 text-center tabular-nums text-text-secondary">{row.year_built || '—'}</td>
+                          <td className="px-2 py-1.5 text-right tabular-nums text-text-muted">{row.days_on_market ?? '—'}</td>
+                          <td className="px-2 py-1.5 text-text-muted">
+                            {isActive
+                              ? pp.first_pub_date?.slice(0, 10) || '—'
+                              : cp.closing_date?.slice(0, 10) || '—'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {tableRows.length === 0 && (
+                      <tr><td colSpan={11} className="text-center py-8 text-text-muted italic">Δεν βρέθηκαν ακίνητα</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-3 py-2 border-t border-border-subtle bg-surface-light">
+                  <span className="text-[10px] text-text-muted">
+                    {safePage * PAGE_SIZE + 1}–{Math.min((safePage + 1) * PAGE_SIZE, filtered.length)} από {filtered.length}
+                  </span>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => setPage(p => Math.max(0, p - 1))}
+                      disabled={safePage === 0}
+                      className="px-2 py-0.5 text-[10px] rounded border border-border-subtle bg-surface-card text-text-secondary hover:bg-surface-light disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      ← Προηγ.
+                    </button>
+                    <button
+                      onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                      disabled={safePage >= totalPages - 1}
+                      className="px-2 py-0.5 text-[10px] rounded border border-border-subtle bg-surface-card text-text-secondary hover:bg-surface-light disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      Επόμ. →
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Map */}
+            <div className="bg-surface-card rounded-xl border border-border-default overflow-hidden" style={{ minHeight: 500 }}>
+              {mapProperties.length > 0 ? (
+                <Suspense fallback={<div className="h-full flex items-center justify-center text-text-muted text-xs">Φόρτωση χάρτη...</div>}>
+                  <PropertyMap
+                    properties={mapProperties}
+                    selectedId={selectedPropertyId}
+                    onSelect={setSelectedPropertyId}
+                  />
+                </Suspense>
+              ) : (
+                <div className="h-full flex items-center justify-center text-text-muted text-xs italic p-4 text-center">
+                  {mode === 'closed'
+                    ? 'Ο χάρτης είναι διαθέσιμος μόνο για ενεργά ακίνητα'
+                    : 'Δεν υπάρχουν συντεταγμένες για τα επιλεγμένα ακίνητα'}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Price Elasticity */}

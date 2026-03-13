@@ -12,6 +12,12 @@ export interface PricingFilters {
   year_band?: string;
   sqm_band?: string;
   agent_id?: number;
+  transaction_type?: string;  // Πώληση / Ενοικίαση
+  floor?: string;
+  energy_class?: string;
+  bedrooms?: number;
+  price_min?: number;
+  price_max?: number;
 }
 
 export interface PricingKpis {
@@ -42,6 +48,13 @@ function applyFilters<T extends PricingRow>(data: T[], filters: PricingFilters):
     if (filters.condition && 'condition' in row && row.condition !== filters.condition) return false;
     if (filters.year_band && 'year_band' in row && row.year_band !== filters.year_band) return false;
     if (filters.sqm_band && 'sqm_band' in row && row.sqm_band !== filters.sqm_band) return false;
+    if (filters.transaction_type && 'transaction_type' in row && row.transaction_type !== filters.transaction_type) return false;
+    if (filters.floor && row.floor !== filters.floor) return false;
+    if (filters.energy_class && 'energy_class' in row && row.energy_class !== filters.energy_class) return false;
+    if (filters.bedrooms != null && ('bedrooms' in row ? row.bedrooms : null) !== filters.bedrooms) return false;
+    const price = getPrice(row);
+    if (filters.price_min != null && (price == null || price < filters.price_min)) return false;
+    if (filters.price_max != null && (price == null || price > filters.price_max)) return false;
     return true;
   });
 }
@@ -118,6 +131,17 @@ export function usePricingEngine<T extends PricingRow>(data: T[]) {
     });
   }, []);
 
+  const setFilter = useCallback((key: keyof PricingFilters, value: string | number | undefined) => {
+    setFiltersState(prev => {
+      if (value == null) {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      }
+      return { ...prev, [key]: value };
+    });
+  }, []);
+
   const clearFilters = useCallback(() => setFiltersState({}), []);
 
   const filtered = useMemo(() => applyFilters(data, filters), [data, filters]);
@@ -126,17 +150,24 @@ export function usePricingEngine<T extends PricingRow>(data: T[]) {
   const breakdowns = useMemo(() => ({
     byCategory: computeBreakdown(filtered, r => r.subcategory ?? 'Unknown'),
     byArea: computeBreakdown(filtered, r => r.area ?? 'Unknown'),
-    byAgent: computeBreakdown(filtered, r => ('canonical_name' in r ? r.canonical_name : null) ?? 'Unknown'),
+    byAgent: computeBreakdown(filtered, r => String(r.agent_id)),
     byCondition: computeBreakdown(filtered, r => ('condition' in r ? r.condition as string : 'Unknown')),
     byYearBand: computeBreakdown(filtered, r => ('year_band' in r ? r.year_band as string : 'Unknown')),
     bySqmBand: computeBreakdown(filtered, r => ('sqm_band' in r ? r.sqm_band as string : 'Unknown')),
     byFloor: computeBreakdown(filtered, r => r.floor ?? 'Unknown'),
     byOffice: computeBreakdown(filtered, r => r.office ?? 'Unknown'),
+    byTransactionType: computeBreakdown(filtered, r => ('transaction_type' in r ? (r as any).transaction_type : null) ?? 'Unknown'),
+    byEnergyClass: computeBreakdown(filtered, r => ('energy_class' in r ? (r as any).energy_class : null) ?? 'Unknown'),
+    byBedrooms: computeBreakdown(filtered, r => {
+      const b = 'bedrooms' in r ? r.bedrooms : null;
+      return b != null ? String(b) : 'Unknown';
+    }),
   }), [filtered]);
 
   return {
     filters,
     toggleFilter,
+    setFilter,
     clearFilters,
     filtered,
     kpis,
