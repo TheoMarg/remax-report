@@ -7,10 +7,13 @@ import { useSubcategoryWeights } from '../hooks/useSubcategoryWeights';
 import { useMetrics } from '../hooks/useMetrics';
 import { useAgents } from '../hooks/useAgents';
 import { usePortfolioQuality } from '../hooks/usePortfolioQuality';
+import { usePricingData } from '../hooks/usePricingData';
 import { useWeightedScores } from '../hooks/useWeightedScores';
 import { usePortfolioScores } from '../hooks/usePortfolioScores';
+import { computeOfficeDirectedPQS } from '../lib/marketability';
 import { AnimatedSection } from '../components/animations/AnimatedSection';
 import { ScoreBar } from '../components/shared/ScoreBar';
+import type { PropertyPricing } from '../lib/types';
 
 const WPS_LABELS: Record<string, string> = {
   registrations: 'Καταγραφές',
@@ -40,6 +43,8 @@ export function Settings({ period }: Props) {
   const { data: allMetrics = [] } = useMetrics(period);
   const { data: agents = [] } = useAgents();
   const { data: qualityData = [] } = usePortfolioQuality();
+  const { data: activePricingRaw = [] } = usePricingData('active');
+  const activePricing = activePricingRaw as PropertyPricing[];
 
   const [kpiDraft, setKpiDraft] = useState<Record<string, number>>({});
   const [pqsDraft, setPqsDraft] = useState<Record<string, number>>({});
@@ -120,6 +125,17 @@ export function Settings({ period }: Props) {
       return d && (d.weight !== w.weight || d.notes !== (w.notes ?? ''));
     });
   }, [subcatWeights, subcatDraft]);
+
+  // Live preview: Top 5 agents by Office-Directed PQS using draft weights
+  const previewOfficeDirected = useMemo(() => {
+    const entries = Object.entries(subcatDraft);
+    if (entries.length === 0 || activePricing.length === 0) return [];
+    const draftWeights = entries.map(([subcategory, d]) => ({
+      id: 0, subcategory, transaction_type: null as string | null, weight: d.weight, notes: d.notes || null, updated_by: null, updated_at: '',
+    }));
+    const basePqsMap = new Map(previewPqs.map(p => [p.agent_id, p.pqs]));
+    return computeOfficeDirectedPQS(activePricing, draftWeights, basePqsMap);
+  }, [subcatDraft, activePricing, previewPqs]);
 
   async function handleSaveSubcat() {
     const updates = Object.entries(subcatDraft).map(([subcategory, d]) => ({
@@ -355,6 +371,25 @@ export function Settings({ period }: Props) {
                 </tbody>
               </table>
             </div>
+
+            {/* Live preview: Top 5 Office-Directed PQS */}
+            {previewOfficeDirected.length > 0 && (
+              <div className="mt-5 pt-4 border-t border-border-subtle">
+                <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Preview — Top 5 Office-Directed PQS</h4>
+                <div className="space-y-2">
+                  {previewOfficeDirected.slice(0, 5).map((p, i) => (
+                    <ScoreBar
+                      key={p.agent_id}
+                      label={p.canonical_name || `Agent #${p.agent_id}`}
+                      score={p.score}
+                      maxScore={previewOfficeDirected[0]?.score || 100}
+                      rank={i + 1}
+                      color="#C9961A"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </AnimatedSection>
       )}

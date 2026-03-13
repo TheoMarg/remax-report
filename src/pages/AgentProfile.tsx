@@ -203,6 +203,23 @@ export function AgentProfile({ period }: Props) {
     });
   }, [allMetrics, agentId]);
 
+  // ── Portfolio mix analysis ──
+  const portfolioMix = useMemo(() => {
+    const items = portfolio.data ?? [];
+    if (items.length === 0) return null;
+    const counts = new Map<string, number>();
+    for (const e of items) {
+      const sc = e.properties?.subcategory || 'Άλλο';
+      counts.set(sc, (counts.get(sc) ?? 0) + 1);
+    }
+    const total = items.length;
+    const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+    const maxPct = sorted.length > 0 ? (sorted[0][1] / total) * 100 : 0;
+    const isDiversified = maxPct <= 40;
+    const isConcentrated = maxPct > 60;
+    return { sorted, total, isDiversified, isConcentrated, maxPct };
+  }, [portfolio.data]);
+
   // ── Expiring exclusives ──
   const expiringMandates = useMemo(() => {
     const now = new Date();
@@ -319,6 +336,15 @@ export function AgentProfile({ period }: Props) {
             <div className="flex items-baseline gap-2 mb-3">
               <span className="text-3xl font-bold text-brand-teal">{myPqs?.pqs.toFixed(1) ?? '—'}</span>
               <span className="text-sm text-text-muted">#{myPqsRank} of {pqsResults.length}</span>
+              {portfolioMix && (
+                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                  portfolioMix.isDiversified ? 'bg-green-100 text-green-700' :
+                  portfolioMix.isConcentrated ? 'bg-red-100 text-red-700' :
+                  'bg-yellow-100 text-yellow-700'
+                }`}>
+                  {portfolioMix.isDiversified ? 'Diversified' : portfolioMix.isConcentrated ? 'Concentrated' : 'Moderate'}
+                </span>
+              )}
             </div>
             {myPqs && (
               <div className="space-y-1.5">
@@ -331,6 +357,19 @@ export function AgentProfile({ period }: Props) {
                     <span className="w-10 text-right tabular-nums font-medium">{val.toFixed(0)}</span>
                   </div>
                 ))}
+              </div>
+            )}
+            {/* Portfolio mix breakdown */}
+            {portfolioMix && portfolioMix.sorted.length > 0 && (
+              <div className="mt-3 pt-2 border-t border-border-subtle">
+                <div className="text-[9px] font-semibold uppercase tracking-wider text-text-muted mb-1.5">Portfolio Mix</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {portfolioMix.sorted.map(([sc, count]) => (
+                    <span key={sc} className="text-[10px] bg-surface-light border border-border-subtle rounded px-1.5 py-0.5 text-text-secondary">
+                      {sc}: <span className="font-bold text-text-primary">{count}</span>
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
           </div>

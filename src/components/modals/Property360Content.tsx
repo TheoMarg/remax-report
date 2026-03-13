@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import { usePropertyDetail } from '../../hooks/usePropertyDetail';
 import { usePropertyJourneys } from '../../hooks/usePropertyJourneys';
 import { useQualityMetrics } from '../../hooks/useQualityMetrics';
+import { useMarketability } from '../../hooks/useMarketability';
 import { usePeriod } from '../../hooks/usePeriod';
 import { EntityLink } from '../shared/EntityLink';
 import { PropertyTimeline } from '../properties/PropertyTimeline';
@@ -111,6 +113,16 @@ export function Property360Content({ propertyId }: Props) {
   // Company averages for stage comparison
   const { total: companyAvg } = useQualityMetrics(journeys);
 
+  // Marketability score for this property
+  const { marketAdjusted, benchmarks } = useMarketability();
+  const marketabilityScore = useMemo(() => {
+    for (const agentResult of marketAdjusted) {
+      const propScore = agentResult.property_scores.find(ps => ps.property_id === propertyId);
+      if (propScore) return propScore.score;
+    }
+    return null;
+  }, [marketAdjusted, propertyId]);
+
   const prop = property.data;
   const agentData = agent.data;
   const eventsData = events.data ?? [];
@@ -149,6 +161,15 @@ export function Property360Content({ propertyId }: Props) {
           {prop.subcategory && (
             <span className="text-[10px] bg-surface border border-border-default rounded-lg px-1.5 py-0.5 text-text-secondary">
               {prop.subcategory}
+            </span>
+          )}
+          {marketabilityScore != null && (
+            <span className={`text-[10px] font-semibold rounded-lg px-1.5 py-0.5 ${
+              marketabilityScore >= 80 ? 'bg-green-100 text-green-700' :
+              marketabilityScore >= 50 ? 'bg-yellow-100 text-yellow-700' :
+              'bg-red-100 text-red-700'
+            }`}>
+              Marketability: {marketabilityScore}/100
             </span>
           )}
           {prop.transaction_type && (

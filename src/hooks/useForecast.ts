@@ -3,6 +3,10 @@ import { supabase } from '../lib/supabase';
 import { ALLOWED_AGENT_IDS } from '../lib/constants';
 import { buildForecast, type ForecastResult } from '../lib/forecasting';
 
+// Team virtual CRM accounts — exclude from revenue forecast (is_team = true)
+const TEAM_AGENT_IDS = new Set([33, 34, 35, 103]);
+const INDIVIDUAL_AGENT_IDS = ALLOWED_AGENT_IDS.filter(id => !TEAM_AGENT_IDS.has(id));
+
 interface MonthlyGci {
   month: string;
   gci: number;
@@ -11,6 +15,7 @@ interface MonthlyGci {
 /**
  * Fetches all monthly GCI data and computes a 6-month forecast.
  * Uses v_combined_metrics aggregated by month.
+ * Filters to individual agents only (is_team = false).
  */
 export function useForecast(office?: string) {
   return useQuery({
@@ -19,7 +24,7 @@ export function useForecast(office?: string) {
       let query = supabase
         .from('v_combined_metrics')
         .select('period_start, gci, office')
-        .in('agent_id', ALLOWED_AGENT_IDS);
+        .in('agent_id', INDIVIDUAL_AGENT_IDS);
 
       if (office && office !== 'all') {
         query = query.eq('office', office);

@@ -81,6 +81,20 @@ export function Agent360Content({ agentId }: Props) {
   const agentTargets = targets.data;
   const withdrawalData = withdrawals.data ?? {};
 
+  // Portfolio mix analysis
+  const portfolioMix = (() => {
+    if (portfolioItems.length === 0) return null;
+    const counts = new Map<string, number>();
+    for (const e of portfolioItems) {
+      const sc = e.properties?.subcategory || 'Άλλο';
+      counts.set(sc, (counts.get(sc) ?? 0) + 1);
+    }
+    const total = portfolioItems.length;
+    const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+    const maxPct = sorted.length > 0 ? (sorted[0][1] / total) * 100 : 0;
+    return { isDiversified: maxPct <= 40, isConcentrated: maxPct > 60 };
+  })();
+
   // WPS & PQS scores
   const startDates: Record<number, string | null> = {};
   if (agent) startDates[agentId] = agent.start_date;
@@ -183,6 +197,15 @@ export function Agent360Content({ agentId }: Props) {
               <div className="flex items-baseline gap-2">
                 <span className="text-xl font-bold text-brand-teal">{myPqs.pqs.toFixed(1)}</span>
                 <span className="text-xs text-text-muted">#{myPqsRank} of {pqsResults.length}</span>
+                {portfolioMix && (
+                  <span className={`text-[9px] font-semibold px-1 py-0.5 rounded ${
+                    portfolioMix.isDiversified ? 'bg-green-100 text-green-700' :
+                    portfolioMix.isConcentrated ? 'bg-red-100 text-red-700' :
+                    'bg-yellow-100 text-yellow-700'
+                  }`}>
+                    Mix: {portfolioMix.isDiversified ? 'Div.' : portfolioMix.isConcentrated ? 'Conc.' : 'Mod.'}
+                  </span>
+                )}
               </div>
               <div className="mt-2 space-y-1">
                 {Object.entries(myPqs.dimensions).map(([key, val]) => (

@@ -236,7 +236,10 @@ export function buildForecast(
     });
   }
 
-  const ens = ensemble(forecastInputs);
+  // Explicit weights: MA 0.3, Linear 0.2, YoY 0.25, Seasonal 0.25
+  const weightOrder = [0.3, 0.2, 0.25, 0.25];
+  const ensWeights = forecastInputs.map((_, i) => weightOrder[i] ?? 0.25);
+  const ens = ensemble(forecastInputs, ensWeights);
 
   // Build results: actuals + forecast
   const results: ForecastResult[] = [];
